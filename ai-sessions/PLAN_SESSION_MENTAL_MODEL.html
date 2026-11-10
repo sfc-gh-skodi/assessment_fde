@@ -10,8 +10,8 @@
     "generated": "2026-11-10",
     "intent": "Step-by-step mental model of the Cortex Code session that planned and prototyped the MiniVM optimizer and evaluator",
     "dataSources": [
-      { "type": "file", "path": "prompts/user_prompts.md" },
-      { "type": "file", "path": "prompts/subagent_prompts.md" },
+      { "type": "file", "path": "prompts/cf78df4d_user_prompts.md" },
+      { "type": "file", "path": "prompts/cf78df4d_subagent_prompts.md" },
       { "type": "file", "path": "ai-sessions/raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.history.jsonl" },
       { "type": "file", "path": "git-history/git_log.txt" },
       { "type": "file", "path": "prototype_code/README.md" },
@@ -19,11 +19,11 @@
     ],
     "sections": [
       { "id": "big-picture", "title": "The mental model in one picture", "producerNotes": "Hand-drawn HTML/CSS flow; summarizes the session phases." },
-      { "id": "timeline", "title": "Step by step", "dataSources": [{ "type": "file", "path": "prompts/user_prompts.md" }, { "type": "file", "path": "git-history/git_log.txt" }], "producerNotes": "Prompt times are UTC from the session log; commit hashes from git log." },
+      { "id": "timeline", "title": "Step by step", "dataSources": [{ "type": "file", "path": "prompts/cf78df4d_user_prompts.md" }, { "type": "file", "path": "git-history/git_log.txt" }], "producerNotes": "Prompt times are UTC from the session log; commit hashes from git log." },
       { "id": "numbers", "title": "Key numbers", "dataSources": [{ "type": "file", "path": "prototype_code/README.md" }, { "type": "file", "path": "prototype_code/evaluator_agent/meta_report.md" }], "producerNotes": "Cycle counts measured with bin/minivm; refresh with prototype_code/run_all.sh." },
       { "id": "lessons", "title": "What we learned", "dataSources": [{ "type": "file", "path": "BUILD_PLAN.md" }] },
-      { "id": "course-corrections", "title": "Course corrections", "dataSources": [{ "type": "file", "path": "prompts/user_prompts.md" }] },
-      { "id": "agents", "title": "Agents used", "dataSources": [{ "type": "file", "path": "prompts/subagent_prompts.md" }] },
+      { "id": "course-corrections", "title": "Course corrections", "dataSources": [{ "type": "file", "path": "prompts/cf78df4d_user_prompts.md" }] },
+      { "id": "agents", "title": "Agents used", "dataSources": [{ "type": "file", "path": "prompts/cf78df4d_subagent_prompts.md" }] },
       { "id": "record", "title": "Session record in this repo", "producerNotes": "Regenerate with python3 tools/export_session.py" }
     ]
   }
@@ -283,17 +283,19 @@
     <tr><td>Research: working model</td><td>Research, read-only on the repo</td><td><code>notes/research_working_model.md</code></td><td><code>debef74d…</code></td></tr>
   </tbody>
 </table></div>
-<p>All agents ran on <code>claude-opus-5-5</code> in Cortex Code. The exact prompts are in <code>prompts/subagent_prompts.md</code>.</p>
+<p>All agents ran on <code>claude-opus-5-5</code> in Cortex Code. The exact prompts are in <code>prompts/cf78df4d_subagent_prompts.md</code>.</p>
 
 <h2 id="record">Session record in this repo</h2>
 <div class="table-wrap"><table>
   <thead><tr><th>Path</th><th>Contents</th></tr></thead>
   <tbody>
     <tr><td><code>ai-sessions/raw/</code></td><td>Raw Cortex Code session files (main + 5 subagents), <code>.json</code> metadata + <code>.history.jsonl</code> transcripts. Verbatim, except that 4 embedded base64 copies of the one-pager PDF are replaced by placeholders, so no binary content is committed.</td></tr>
-    <tr><td><code>prompts/user_prompts.md</code></td><td>All 22 user prompts in order, with timestamps (system reminders stripped).</td></tr>
-    <tr><td><code>prompts/subagent_prompts.md</code></td><td>The 5 prompts the main agent sent to subagents.</td></tr>
+    <tr><td><code>prompts/cf78df4d_user_prompts.md</code></td><td>This session's user prompts in order, with UTC timestamps (system reminders stripped). The 22 covered on this page, plus follow-ups made after it was written.</td></tr>
+    <tr><td><code>prompts/cf78df4d_subagent_prompts.md</code></td><td>The 5 prompts the main agent sent to subagents.</td></tr>
+    <tr><td><code>prompts/INDEX.md</code></td><td>One row per exported session (this one, the plan-review session, and any later ones), linking to each session's prompt files.</td></tr>
     <tr><td><code>git-history/</code></td><td><code>git_log.txt</code> (log with stats), <code>git_log_patch.txt</code> (full text patches; binaries appear only as "Binary files differ"), <code>git_reflog.txt</code> (includes the amend and force-push).</td></tr>
-    <tr><td><code>tools/export_session.py</code></td><td>Regenerates all of the above: <code>python3 tools/export_session.py</code>.</td></tr>
+    <tr><td><code>tools/export_session.py</code></td><td>Regenerates all of the above, for one or more sessions: <code>python3 tools/export_session.py &lt;session-id&gt; ...</code>. Each session gets its own files, so exports never overwrite each other.</td></tr>
+    <tr><td><code>tools/hooks/export_session_hook.sh</code></td><td>Cortex Code <code>Stop</code> + <code>SessionEnd</code> hook (registered in <code>~/.snowflake/cortex/hooks.json</code>). After every turn of any session working in this repo, it runs the exporter for that session. Ignores other projects, never commits, always exits 0. Log: <code>~/.snowflake/cortex/logs/export_session_hook.log</code>.</td></tr>
   </tbody>
 </table></div>
 <p class="sub">The export runs while the session is still in progress, so the final turn may be cut short. Re-run the script at the end to capture everything.</p>

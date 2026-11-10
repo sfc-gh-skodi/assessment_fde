@@ -1,3 +1,40 @@
+commit 81d10bde82c7b2118643ba745fb169c8abb5ffed
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 16:59:47 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 16:59:47 2026 -0500
+
+    Add session record: mental model, raw sessions, prompts, git history
+    
+    Text-only export of the Cortex Code session and its subagents so reviewers can
+    follow how the work was done; embedded PDF payloads are replaced by placeholders
+    so no binary content is committed. Regenerate with tools/export_session.py.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ ai-sessions/SESSION_MENTAL_MODEL.html              |  302 +
+ ...0594d-cf59-462d-bb62-82831dfc8ee4.history.jsonl |   14 +
+ .../raw/4130594d-cf59-462d-bb62-82831dfc8ee4.json  |   28 +
+ ...00403-0308-4725-a64d-1649114c1f99.history.jsonl |   15 +
+ .../raw/a4c00403-0308-4725-a64d-1649114c1f99.json  |   27 +
+ ...8df4d-6085-4d1f-90b5-dfd32d2a4e14.history.jsonl |  232 +
+ .../raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.json  |  135 +
+ ...0e623-176a-431c-9be9-9ec46920bf7d.history.jsonl |   32 +
+ .../raw/d440e623-176a-431c-9be9-9ec46920bf7d.json  |   27 +
+ ...ef74d-3417-4bc4-b9e3-141779b64d14.history.jsonl |   10 +
+ .../raw/debef74d-3417-4bc4-b9e3-141779b64d14.json  |   27 +
+ ...b1914-1b87-4de3-a673-89a96f689286.history.jsonl |   16 +
+ .../raw/eabb1914-1b87-4de3-a673-89a96f689286.json  |   27 +
+ git-history/git_log.txt                            |  142 +
+ git-history/git_log_patch.txt                      | 8706 ++++++++++++++++++++
+ git-history/git_reflog.txt                         |    5 +
+ prompts/subagent_prompts.md                        |   78 +
+ prompts/user_prompts.md                            |  100 +
+ tools/export_session.py                            |  114 +
+ 19 files changed, 10037 insertions(+)
+
 commit d899e82196a02b7920d3545c5cedc234646b1d2d
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Tue Nov 10 16:45:38 2026 -0500

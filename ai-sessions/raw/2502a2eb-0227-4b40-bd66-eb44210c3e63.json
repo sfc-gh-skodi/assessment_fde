@@ -1,0 +1,33 @@
+{
+ "title": "Auditing MiniVM Prototype Code and Refining Build Plan",
+ "session_id": "2502a2eb-0227-4b40-bd66-eb44210c3e63",
+ "summarization": [],
+ "connection_name": "gcp",
+ "working_directory": "/Users/skodi/Desktop/take-home-assessment",
+ "git_root": "/Users/skodi/Desktop/take-home-assessment",
+ "git_branch": "main",
+ "secondary_working_directories": [],
+ "created_at": "2026-11-10T21:40:35.107Z",
+ "last_updated": "2026-11-10T22:10:39.049Z",
+ "last_request_id": "227f6690-c3ce-4a95-a065-44fef543ae55",
+ "session_accounts": [
+  "THB83496"
+ ],
+ "used_gov_sql_connection": false,
+ "permission_cache": {},
+ "local_permission_grants": [],
+ "history_length": 130,
+ "session_type": "main",
+ "agent_mode": "standard",
+ "thread": {
+  "threadId": "82264130429",
+  "accountHost": "sfpscogs-skodi-aws-demo.snowflakecomputing.com",
+  "lastSyncedHistoryLength": 130
+ },
+ "sql_mode": "write",
+ "model": "openai-gpt-5.4",
+ "session_break_context_usage": {
+  "input_tokens": 203383,
+  "context_window": 1050000
+ }
+}

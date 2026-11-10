@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>Review Session Mental Model</title>
+  <script type="application/json" id="snowflake-report-metadata">
+  {
+    "generated": "2026-11-10",
+    "intent": "Mental model of the session that reviewed the MiniVM build plan and prototype code, then exported the session record.",
+    "dataSources": [
+      { "type": "file", "path": "prompts/2502a2eb_user_prompts.md" },
+      { "type": "file", "path": "prompts/2502a2eb_subagent_prompts.md" },
+      { "type": "file", "path": "ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.json" },
+      { "type": "file", "path": "ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.history.jsonl" },
+      { "type": "file", "path": "git-history/git_log.txt" },
+      { "type": "file", "path": "git-history/git_reflog.txt" },
+      { "type": "file", "path": "BUILD_PLAN.md" },
+      { "type": "file", "path": "PLAN_REVIEW.md" }
+    ],
+    "sections": [
+      {
+        "id": "session-goal",
+        "title": "Session goal",
+        "dataSources": [
+          { "type": "file", "path": "prompts/2502a2eb_user_prompts.md" },
+          { "type": "file", "path": "ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.json" }
+        ],
+        "producerNotes": "Summarizes what the session was trying to achieve and the repo state it operated on."
+      },
+      {
+        "id": "step-by-step",
+        "title": "Step by step mental model",
+        "dataSources": [
+          { "type": "file", "path": "prompts/2502a2eb_user_prompts.md" },
+          { "type": "file", "path": "BUILD_PLAN.md" },
+          { "type": "file", "path": "PLAN_REVIEW.md" }
+        ],
+        "producerNotes": "Explains the sequence of work: review, gap-finding, plan correction, hook guidance, and session export."
+      },
+      {
+        "id": "artifacts",
+        "title": "Artifacts created or updated",
+        "dataSources": [
+          { "type": "file", "path": "BUILD_PLAN.md" },
+          { "type": "file", "path": "PLAN_REVIEW.md" },
+          { "type": "file", "path": "tools/export_session.py" }
+        ],
+        "producerNotes": "Lists the files changed during this review-focused session."
+      },
+      {
+        "id": "export-record",
+        "title": "Saved session record",
+        "dataSources": [
+          { "type": "file", "path": "ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.json" },
+          { "type": "file", "path": "ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.history.jsonl" },
+          { "type": "file", "path": "prompts/2502a2eb_user_prompts.md" },
+          { "type": "file", "path": "prompts/2502a2eb_subagent_prompts.md" },
+          { "type": "file", "path": "git-history/git_log.txt" },
+          { "type": "file", "path": "git-history/git_log_patch.txt" },
+          { "type": "file", "path": "git-history/git_reflog.txt" }
+        ],
+        "producerNotes": "Documents where the text-only session exports were saved."
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --fg: light-dark(#1f2937, #e5e7eb);
+      --muted: light-dark(#6b7280, #9ca3af);
+      --line: light-dark(#d1d5db, #374151);
+      --card: light-dark(#f8fafc, #111827);
+      --accent: light-dark(#0b6bcb, #60a5fa);
+      --accent-2: light-dark(#11567f, #7dd3fc);
+      --ok: light-dark(#15803d, #4ade80);
+      --warn: light-dark(#b45309, #fbbf24);
+    }
+    body {
+      font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+      max-width: 920px;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0 auto;
+      padding: clamp(16px, 4vw, 28px);
+      color: var(--fg);
+      line-height: 1.55;
+    }
+    h1, h2, h3 { color: light-dark(#0f172a, #f1f5f9); line-height: 1.25; }
+    h1 { margin-bottom: 6px; font-size: clamp(1.5rem, 4vw, 2rem); }
+    h2 { margin-top: 36px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+    p.sub { margin-top: 0; color: var(--muted); }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      background: var(--card);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .card b {
+      display: block;
+      font-size: 1.45rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .step {
+      flex: 1 1 180px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .step .n {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .step b { display: block; margin: 4px 0; }
+    .loop {
+      border: 2px dashed var(--accent);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 14px 0;
+    }
+    .loop-title { color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 14px 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--card); font-weight: 600; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .ok { color: var(--ok); font-weight: 600; }
+    .warn { color: var(--warn); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Review Session Mental Model</h1>
+  <p class="sub">Session <code>2502a2eb-0227-4b40-bd66-eb44210c3e63</code> · 2026-11-10 · model <code>openai-gpt-5.4</code> · review / plan-hardening / export</p>
+
+  <div class="grid">
+    <div class="card"><b>1</b>main session exported</div>
+    <div class="card"><b>22</b>user prompts captured</div>
+    <div class="card"><b>4</b>core review artifacts updated</div>
+    <div class="card"><b>0</b>binaries saved in export</div>
+  </div>
+
+  <h2 id="session-goal">Session goal</h2>
+  <p>This session was not about building the MiniVM optimizer itself. The mental model is: <b>audit the plan and prototype first, then make the plan more honest, then package the review record cleanly.</b></p>
+  <div class="flow">
+    <div class="step"><span class="n">Goal</span><b>Find holes</b>Review the one-pager, build plan, docs, and prototype code for missed edge cases, time-limit risks, and scaling risks.</div>
+    <div class="step"><span class="n">Deliverable</span><b>Write review artifacts</b>Create <code>PLAN_REVIEW.md</code> and tighten <code>BUILD_PLAN.md</code> so the plan says exactly what the evidence supports.</div>
+    <div class="step"><span class="n">Follow-up</span><b>Explain the session</b>Create a durable HTML mental model plus text-only exports of prompts, session files, and git history.</div>
+  </div>
+
+  <h2 id="step-by-step">Step by step mental model</h2>
+  <p>The session followed a simple review loop: understand current claims, compare them with the actual prototype, tighten the plan, then capture the record.</p>
+
+  <div class="loop">
+    <div class="loop-title">Core review loop</div>
+    <div class="flow">
+      <div class="step"><span class="n">1</span><b>Read the current state</b>Loaded the one-pager, <code>BUILD_PLAN.md</code>, MiniVM docs, and the evaluator / generator prototype files.</div>
+      <div class="step"><span class="n">2</span><b>Compare claims to evidence</b>Checked whether the build plan's claims about correctness, timing, and scale were fully backed by prototype code and docs.</div>
+      <div class="step"><span class="n">3</span><b>Find concrete gaps</b>Identified unfinished tie handling, numeric-looking string ambiguity, heuristic order detection, optimistic runtime assumptions, and weak scale coverage.</div>
+      <div class="step"><span class="n">4</span><b>Harden the plan</b>Updated <code>BUILD_PLAN.md</code> so known gaps are treated as blocking work, not as solved problems.</div>
+      <div class="step"><span class="n">5</span><b>Prioritize fixes</b>Added a file-by-file prototype fix list to <code>PLAN_REVIEW.md</code> so the next implementation pass has a clear order.</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step"><span class="n">Hooks pass</span><b>Reduce wasted runtime</b>We then asked how hooks could speed up future runs. The answer was: use cheap, deterministic hooks to flag evaluator/comparator/generator risks before and after edits.</div>
+    <div class="step"><span class="n">Plan update</span><b>Add hook guidance</b>The plan was updated with a small table showing which hooks to add, when they fire, what they check, and why they matter for this repo.</div>
+    <div class="step"><span class="n">Export pass</span><b>Save the review record</b>Finally, we exported prompts, raw session files, and git history as text-only artifacts, then wrote this HTML summary.</div>
+  </div>
+
+  <h3>What changed in engineering terms</h3>
+  <ul>
+    <li><b>Before:</b> the plan was broadly correct, but it spoke too confidently about prototype evidence.</li>
+    <li><b>After:</b> the plan distinguishes prototype evidence from production-ready guarantees.</li>
+    <li><b>Before:</b> prototype limitations existed mostly as scattered notes.</li>
+    <li><b>After:</b> they are grouped, prioritized, and tied to concrete files and follow-up work.</li>
+  </ul>
+
+  <h2 id="artifacts">Artifacts created or updated</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Path</th><th>Role in this session</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>PLAN_REVIEW.md</code></td>
+          <td>Main review output</td>
+          <td>Captures the holes, missed edge cases, scaling limits, and now the prioritized prototype fix list.</td>
+        </tr>
+        <tr>
+          <td><code>BUILD_PLAN.md</code></td>
+          <td>Plan hardened in place</td>
+          <td>Now reflects unfinished evaluator work, realistic budgets, explicit stress coverage, and the hook table.</td>
+        </tr>
+        <tr>
+          <td><code>tools/export_session.py</code></td>
+          <td>Export helper fixed</td>
+          <td>Updated so it can export the current session even when the Cortex conversations directory stores the session files flat rather than nested.</td>
+        </tr>
+        <tr>
+          <td><code>ai-sessions/review_session.html</code></td>
+          <td>This report</td>
+          <td>Gives the step-by-step mental model of the review session and points to the saved text artifacts.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="export-record">Saved session record</h2>
+  <p>The export is intentionally text-only. No binaries were copied into the repo for this record.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Path</th><th>Contents</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.json</code><br><code>ai-sessions/raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.history.jsonl</code></td>
+          <td>Raw main-session metadata and transcript history for this review session.</td>
+          <td><span class="ok">saved</span></td>
+        </tr>
+        <tr>
+          <td><code>prompts/2502a2eb_user_prompts.md</code></td>
+          <td>All user prompts captured in order, including the original MiniVM work and this review/export follow-up.</td>
+          <td><span class="ok">saved</span></td>
+        </tr>
+        <tr>
+          <td><code>prompts/2502a2eb_subagent_prompts.md</code></td>
+          <td>Prompts sent to subagents that were part of the larger MiniVM session context.</td>
+          <td><span class="ok">saved</span></td>
+        </tr>
+        <tr>
+          <td><code>git-history/git_log.txt</code><br><code>git-history/git_log_patch.txt</code><br><code>git-history/git_reflog.txt</code></td>
+          <td>Git log, patch history, and reflog for the repo state surrounding this session.</td>
+          <td><span class="ok">saved</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Why this export is useful</h3>
+  <ul>
+    <li>It preserves the reasoning trail, not just the final files.</li>
+    <li>It makes the review reproducible: another pass can see the prompts, the plan changes, and the surrounding git history.</li>
+    <li>It avoids polluting the repo with binary blobs while still keeping the session record durable.</li>
+  </ul>
+
+  <p class="sub">If you want to refresh the export later, rerun <code>python3 tools/export_session.py 2502a2eb-0227-4b40-bd66-eb44210c3e63</code>.</p>
+</body>
+</html>

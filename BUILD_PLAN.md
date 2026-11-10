@@ -43,13 +43,13 @@
 |---|---|---|---|
 | R1 | `./optimize program.mini schema.json` prints a program | Python 3 stdlib. On any internal error, or an estimate that isn't cheaper, it prints the input unchanged | runner: exit 0, `bin/minivm` parses the output |
 | R2 | Same results on any data satisfying the schema's constraints | rewrites justified only by semantics and **constraints** (never stats); safety rules in §5 | evaluator over generated data, plus meta-eval |
-| R3 | Order doesn't matter unless the program specifies it | the optimizer always preserves order; the evaluator compares in order when the original specifies it (§4.3) | `b_reverse` caught (172 defects) **[M]** |
+| R3 | Order doesn't matter unless the program specifies it | the optimizer preserves order when it is semantically required; the evaluator compares exact order only when it can prove the original specifies it, and treats tied sort-key rows conservatively (§4.3) | `b_reverse` caught (172 defects) **[M]**; tie-aware handling is still required |
 | R4 | Numbers within 1e-6 relative | the optimizer doesn't change arithmetic; the comparator compares Decimal values with relative tolerance | `h_tiny_drift` OK, `b_drift` caught **[M]** |
 | R5 | If the input program errors, anything goes | the evaluator skips pairs where the original errors | rubric O5 |
 | R6 | ≤ 1 s per program | linear passes; internal deadline at 0.8 s, then fall back | runner reports max optimizer time |
 | R7 | Noticeably faster, on unseen programs and data | general passes (§3), held-out generated programs | perf report: geomean speedup on examples and on held-out programs |
 | R8 | `./evaluate OPTIMIZER` exits 0 or non-zero; works for any optimizer with the same CLI | black box: subprocess call plus `bin/minivm` only | meta-eval verdict table |
-| R9 | Evaluator ≤ 2 min, may use `bin/minivm` | platform binary (8.3 ms/run), parallel, watchdog at 100 s | wall time in every report |
+| R9 | Evaluator ≤ 2 min, may use `bin/minivm` | platform binary, phased corpus caps, parallel runs, watchdog at 100 s, and a smaller must-run tier before optional held-out coverage | wall time in every report |
 | R10 | Submission: code, prompts, logs, raw sessions, git history, no binaries, models and spend, "few days" plan | §11 | checklist |
 
 ---
@@ -92,7 +92,7 @@ Each row: the original program's cost, what made it slow, and what that means fo
 4. Estimate cost with the `[doc: cycles.md#cost-table]` model.
 5. Emit.
 
-**Global guard:** if the estimated cost isn't lower, an intermediate result would grow, or any pass throws an exception, emit the input unchanged.
+**Global guard:** if the estimated cost isn't lower, a pass cannot prove its own safety preconditions, or any pass throws an exception, emit the input unchanged.
 
 | Rank | Rewrite | Gain | Risk | Safety rule (§5) | Prototype evidence |
 |---|---|---|---|---|---|
@@ -115,12 +115,12 @@ Each row: the original program's cost, what made it slow, and what that means fo
 1. **Corpus.**
    - Programs: the 8 examples, mutants of the examples, and generated programs from a type-checked template generator over the schema (scan/filter, 1–4 joins along `refs`, GROUP aggregates, SORT/TOPK/SLICE, string/date/arithmetic) with legacy bloat added. Keep a program only if the original succeeds and gives non-empty output on at least one dataset.
    - Data: `gen_data.py` style, constraint-respecting, adversarial, with literals harvested from the programs, all validated by `--schema`. Plus datasets designed to make originals error.
-2. **Run.** One optimizer call per program, at most 4 in parallel so machine load can't cause a false "> 1 s". Then VM runs on all cores using the platform binary.
+2. **Run.** One optimizer call per program, at most 4 in parallel so machine load can't cause a false "> 1 s". Then VM runs on all cores using the platform binary. The evaluator runs in tiers: regressions and examples first, then a bounded held-out sample, then optional extra coverage only if time remains.
 3. **Compare** using the rubric in §6.
-   - Order: a data-flow pass over the original decides whether output order is specified (`eval-proto.py: output_ordered`).
-   - Ties: compare rows tied on the sort keys as a multiset, by running an *instrumented* original that also outputs the sort keys (still to build).
+   - Order: a validated, conservative data-flow pass over the original decides whether output order is specified (`eval-proto.py: output_ordered` is the prototype, not the final proof).
+   - Ties: compare rows tied on the sort keys as a multiset, by running an *instrumented* original that also outputs the sort keys. This is a blocking item for the production evaluator.
 4. **On a defect:** re-run once, save the repro (program, optimized program, dataset, diff) to `eval_out/`, then shrink it if time remains (stretch goal). Exit 1.
-5. **Budget [M]:** 8.3 ms per run means 320 checks take 1.7 s. A watchdog at 100 s stops new work and reports the verdict so far.
+5. **Budget [M]:** the current prototype does 320 checks in 1.7 s, but production timing must be re-measured after adding held-out programs, tie-aware comparison, repro capture and shrinking. A watchdog at 100 s stops new work and reports the verdict so far.
 
 ### 4.1 Evaluation methods compared
 
@@ -134,7 +134,7 @@ Each row: the original program's cost, what made it slow, and what that means fo
 | **Translation validation / math proof (Alive2, CompCert)** | encode both programs symbolically under the constraints and ask an SMT solver whether they are equivalent | **equivalence on all data** | everything, within the encoded semantics | none, if the encoding is right | days to build; may be slow per query; semantics are large (NUM rounding, Unicode UPPER, 3-valued logic) | out of scope for 2–3 h; first item in the "few days" plan |
 | **Bounded exhaustive (small-scope hypothesis)** | enumerate all tiny databases (e.g. ≤ 3 rows, small value domains) | equivalence on every database up to that size | most semantic bugs, which show up on tiny data | none | grows exponentially with columns and values; feasible for 1–2 tables | stretch goal: NULL/''/tie value domains on 0–3 rows |
 
-**Decision:** run-and-compare is the verdict. Normalize-and-compare is a fast path. Metamorphic ideas shape the data generator. Mutation testing gates the evaluator. Proofs are deferred.
+**Decision:** run-and-compare is the verdict. Normalize-and-compare is a fast path. Metamorphic ideas shape the data generator. Mutation testing gates the evaluator. Proofs are deferred. The current prototype timings and kill rates are evidence for the approach, not proof that the final evaluator already meets every edge case.
 
 ---
 
@@ -191,10 +191,10 @@ How we handle each: pick the **default that can't produce a false alarm or a wro
 
 | # | Unclear point | Options | Default | Why | Encoded in |
 |---|---|---|---|---|---|
-| Q1 | When does a program "specify" order? Do tied rows count? | (a) whenever SORT/TOPK reaches OUT, strict; (b) the same, but tied rows compared as a multiset; (c) never | **(b)**; today (a) | strict order flags legal reorders of ties | `output_ordered`; tie handling still to build |
+| Q1 | When does a program "specify" order? Do tied rows count? | (a) whenever SORT/TOPK reaches OUT, strict; (b) the same, but tied rows compared as a multiset; (c) never | **(b)**; today the prototype still behaves like (a) | strict order flags legal reorders of ties | `output_ordered`; tie handling is a required follow-up |
 | Q2 | `"2.0"` vs `"2.00"`; INT `2` vs NUM `"2.0"` | text equal / numeric equal | numeric equal | "numbers within 1e-6" | `tricky_checks.py` CMP |
-| Q3 | STR `'1.0'` vs `'1.00'` print like numbers | infer column types / treat as numbers | treat as numbers (documented gap) | the output JSON has no types | known gap; fix by inferring types |
-| Q4 | Tolerance on INTs (`10000000` vs `10000001` passes) | apply to INTs / exact for INTs | apply (spec says "numbers") | follow the spec literally | CMP check |
+| Q3 | STR `'1.0'` vs `'1.00'` print like numbers | infer column types / treat as numbers | prototype: treat as numbers; production: infer output types where possible | the output JSON has no types, but the final evaluator should not hide string bugs behind numeric formatting | known gap; fix by inferring types |
+| Q4 | Tolerance on INTs (for large integers, `10000000` vs `10000001` passes because `1 <= 1e-6 * 10000001`) | apply to INTs / exact for INTs | apply (spec says "numbers") | follow the spec literally; this is a relative tolerance, not an absolute `1e-6` difference | CMP check |
 | Q5 | Near zero (`0` vs `1e-7`) | relative only / add an absolute epsilon | relative only | spec says relative; correct optimizers don't change arithmetic | CMP check |
 | Q6 | Ties at a TOPK/SLICE/GFIRST cut-off | fail / warn | warn once tie handling is built | a correct optimizer may choose another tied row | still to build |
 | Q7 | Optimizer may use `bin/minivm`? | yes / no | no | the grader may not ship it next to `./optimize` | optimizer design |
@@ -293,9 +293,9 @@ human ──approve/decide──▶ ORCHESTRATOR ──task.json──▶ BUILDE
 | Evaluator too strict (false alarm) | honest fakes (`h_*`) must pass | Q1–Q5 defaults; tie handling |
 | Comparator type confusion | `tricky_checks.py` CMP | strict numeric format; BOOL ≠ INT (both bugs found and fixed **[M]**) |
 | Using stats for correctness | generator deliberately violates stats | S8; lint check |
-| VM limit blow-up | P3, O6 | S7 cost check |
-| Optimizer > 1 s on 20k-line programs | stress test | linear passes; deadline then fall back |
-| Evaluator > 2 min | wall time in report | platform binary, watchdog, limits on corpus size |
+| VM limit blow-up | P3, O6 | S7 plus dedicated near-limit stress cases |
+| Optimizer > 1 s on 20k-line programs | stress test on near-limit synthetic programs | linear passes; deadline then fall back |
+| Evaluator > 2 min | wall time in report | platform binary, watchdog, phased corpus caps, and optional tiers |
 | Overfitting to the 8 examples | held-out generated programs | general passes; no matching on names |
 | Shared bug in optimizer and evaluator | independence grep check | separate parsers |
 
@@ -308,6 +308,7 @@ human ──approve/decide──▶ ORCHESTRATOR ──task.json──▶ BUILDE
 - **Medium:** q0007, q0008, q0002; pushdown through one join; TOPK; string ops after a filter.
 - **Complex:** q0001, q0004, q0005, q0003, q0006; generated 3–4-join plans; a 20k-instruction stress program.
 - **Data:** `gen_data.py` small/medium/large, plus `make_adv_data.py`.
+- **Scale stress:** dedicated near-limit cases for instruction count, row counts, register pressure, and worst-case join/group fan-out; keep these separate from the normal evaluator corpus.
 
 **Runners.**
 - `prototype_code/run_all.sh` today (~1 min).
@@ -324,7 +325,7 @@ human ──approve/decide──▶ ORCHESTRATOR ──task.json──▶ BUILDE
 
 | Time | Work | Checkpoint |
 |---|---|---|
-| 0:00–0:25 | `./evaluate`: port eval-proto, add tie handling and repro saving; independence grep check | CP1: meta-eval 11/11, 0 false alarms |
+| 0:00–0:25 | `./evaluate`: port eval-proto, add tie handling, typed comparison follow-up, and repro saving; independence grep check | CP1: meta-eval 11/11, 0 false alarms, no known tie/type blockers |
 | 0:25–0:50 | `./optimize` skeleton: parse → IR → emit round trip, fallback guard | CP2: identity round trip, 0 defects |
 | 0:50–1:40 | Rewrite ranks 1–4 | CP3: 0 defects, geomean ≥ 2× on examples |
 | 1:40–2:15 | Ranks 5–7, plus the program generator for held-out tests | CP4: 0 defects on 3 seeds |
@@ -348,3 +349,25 @@ human ──approve/decide──▶ ORCHESTRATOR ──task.json──▶ BUILDE
 4. A coverage-guided program and data fuzzer, with delta-debugging reduction.
 5. Held-out red-team agents writing mutants the builders never see.
 6. Large-scale parallel evaluation in the cloud.
+
+---
+
+## 12. Changelog for this review
+
+- Tightened the requirement and evaluator language around specified order and tied rows.
+- Separated current prototype timing evidence from the production evaluator budget.
+- Replaced the vague intermediate-growth guard with pass-specific safety preconditions.
+- Added explicit near-limit stress testing for MiniVM scale boundaries.
+- Marked typed comparison and tie-aware comparison as required gaps to close, not optional polish.
+
+---
+
+## 13. Hooks worth adding
+
+| Hook | When it runs | What it should check | Value proposition |
+|---|---|---|---|
+| `user-prompt-submit-hook` | before work starts on a new request | detect evaluator / comparator / generator / plan-review / export tasks and inject a short checklist | cuts wasted turns by surfacing known MiniVM traps up front: tie handling, typed-output ambiguity, scale coverage, and prototype-vs-production claims |
+| `pre-tool-use` (path-aware edit warning) | before edits to `prototype_code/evaluator_agent/eval-proto.py`, `prototype_code/optimizer_agent/cmp.py`, `prototype_code/optimizer_agent/gen_data.py`, or `BUILD_PLAN.md` | grep for risky patterns: exact-order checks without tie handling, numeric-string coercion, duplicated comparator logic, optimistic runtime claims, or silent side effects | catches the most likely correctness and planning regressions before the edit lands |
+| `post-tool-use` for evaluator/comparator edits | after edits to `eval-proto.py` or `cmp.py` | run `python3 prototype_code/evaluator_agent/tricky_checks.py`; for evaluator changes also run `python3 prototype_code/evaluator_agent/meta_eval.py` | gives fast feedback that the oracle still behaves correctly, instead of finding out at the end of a longer run |
+| `post-tool-use` for generator edits | after edits to `gen_data.py` or adversarial-data helpers | run a tiny validation pass such as `python3 prototype_code/optimizer_agent/gen_data.py --small 1 --medium 1 --large 0` | quickly catches constraint-breaking data generation and keeps generator work cheap to validate |
+| `post-tool-use` for plan edits | after edits to `BUILD_PLAN.md` | grep for unresolved language like `still to build`, `known gap`, `prototype`, `1.7 s`, `2 min`, `proved`, `guarantees` near sections that make strong claims | keeps the plan honest by preventing prototype evidence from being presented as production proof |
