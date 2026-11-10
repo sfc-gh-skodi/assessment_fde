@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>Session mental model: MiniVM take-home, planning and prototyping</title>
+  <script type="application/json" id="snowflake-report-metadata">
+  {
+    "generated": "2026-11-10",
+    "intent": "Step-by-step mental model of the Cortex Code session that planned and prototyped the MiniVM optimizer and evaluator",
+    "dataSources": [
+      { "type": "file", "path": "prompts/user_prompts.md" },
+      { "type": "file", "path": "prompts/subagent_prompts.md" },
+      { "type": "file", "path": "ai-sessions/raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.history.jsonl" },
+      { "type": "file", "path": "git-history/git_log.txt" },
+      { "type": "file", "path": "prototype_code/README.md" },
+      { "type": "file", "path": "BUILD_PLAN.md" }
+    ],
+    "sections": [
+      { "id": "big-picture", "title": "The mental model in one picture", "producerNotes": "Hand-drawn HTML/CSS flow; summarizes the session phases." },
+      { "id": "timeline", "title": "Step by step", "dataSources": [{ "type": "file", "path": "prompts/user_prompts.md" }, { "type": "file", "path": "git-history/git_log.txt" }], "producerNotes": "Prompt times are UTC from the session log; commit hashes from git log." },
+      { "id": "numbers", "title": "Key numbers", "dataSources": [{ "type": "file", "path": "prototype_code/README.md" }, { "type": "file", "path": "prototype_code/evaluator_agent/meta_report.md" }], "producerNotes": "Cycle counts measured with bin/minivm; refresh with prototype_code/run_all.sh." },
+      { "id": "lessons", "title": "What we learned", "dataSources": [{ "type": "file", "path": "BUILD_PLAN.md" }] },
+      { "id": "course-corrections", "title": "Course corrections", "dataSources": [{ "type": "file", "path": "prompts/user_prompts.md" }] },
+      { "id": "agents", "title": "Agents used", "dataSources": [{ "type": "file", "path": "prompts/subagent_prompts.md" }] },
+      { "id": "record", "title": "Session record in this repo", "producerNotes": "Regenerate with python3 tools/export_session.py" }
+    ]
+  }
+  </script>
+  <style>
+    :root { color-scheme: light dark;
+      --fg: light-dark(#1f2937, #e5e7eb); --muted: light-dark(#6b7280, #9ca3af);
+      --line: light-dark(#d1d5db, #374151); --card: light-dark(#f8fafc, #111827);
+      --accent: light-dark(#0b6bcb, #60a5fa); --ok: light-dark(#15803d, #4ade80);
+      --warn: light-dark(#b45309, #fbbf24); --bad: light-dark(#b91c1c, #f87171);
+      --bar: light-dark(#29b5e8, #29b5e8); --bar2: light-dark(#11567f, #7dd3fc); }
+    body { font-family: -apple-system, system-ui, "Segoe UI", sans-serif; line-height: 1.5;
+      max-width: 960px; width: 100%; box-sizing: border-box; margin: 0 auto;
+      padding: clamp(16px, 4vw, 28px); color: var(--fg); }
+    h1, h2, h3 { color: light-dark(#0f172a, #f1f5f9); line-height: 1.25; }
+    h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 4px; }
+    h2 { margin-top: 40px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+    a { color: var(--accent); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em;
+      background: var(--card); padding: 1px 5px; border-radius: 4px; }
+    .sub { color: var(--muted); margin-top: 0; }
+    img, svg { max-width: 100%; height: auto; }
+    .table-wrap { overflow-x: auto; margin: 14px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+    th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; vertical-align: top; }
+    th { background: var(--card); font-weight: 600; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+    .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+    .kpi b { display: block; font-size: 1.6rem; color: var(--accent); }
+    .kpi span { color: var(--muted); font-size: .88rem; }
+    /* flow */
+    .flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; margin: 16px 0; }
+    .step { flex: 1 1 150px; background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      padding: 10px 12px; position: relative; }
+    .step .n { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .step b { display: block; margin: 2px 0 4px; }
+    .step small { color: var(--muted); }
+    .loop { border: 2px dashed var(--accent); border-radius: 12px; padding: 12px; margin: 14px 0; }
+    .loop-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+    .loop .flow { margin: 6px 0; }
+    /* timeline */
+    .phase { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; margin: 22px 0; }
+    .phase h3 { margin: 0 0 4px; }
+    .phase .why { color: var(--muted); margin: 0 0 8px; }
+    .prompt { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+    .prompt .meta { font-size: .8rem; color: var(--muted); }
+    .prompt q { font-style: italic; }
+    .prompt ul { margin: 6px 0 0; padding-left: 20px; }
+    .tag { display: inline-block; font-size: .75rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); margin-left: 4px; }
+    .tag.commit { color: var(--ok); border-color: var(--ok); }
+    .tag.fix { color: var(--warn); border-color: var(--warn); }
+    .tag.agent { color: var(--accent); border-color: var(--accent); }
+    /* bars */
+    .bars { display: grid; grid-template-columns: minmax(56px, auto) 1fr; gap: 6px 10px; align-items: center; margin: 12px 0; font-size: .9rem; }
+    .track { background: var(--card); border: 1px solid var(--line); border-radius: 6px; height: 22px; position: relative; overflow: hidden; }
+    .fill { height: 100%; background: var(--bar); }
+    .fill.b2 { background: var(--bar2); }
+    .track .lbl { position: absolute; left: 8px; top: 1px; font-size: .8rem; color: light-dark(#0f172a, #f8fafc); font-weight: 600; }
+    .legend { font-size: .85rem; color: var(--muted); }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 4px 0 10px; }
+    .ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; } .warn { color: var(--warn); font-weight: 600; }
+    ol li, ul li { margin: 3px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Session mental model: MiniVM take-home, planning and prototyping</h1>
+<p class="sub">Cortex Code session <code>cf78df4d-6085-4d1f-90b5-dfd32d2a4e14</code> · 2026-11-10 · model <code>claude-opus-5-5</code> · 22 user prompts · 5 subagents · 4 commits</p>
+
+<div class="kpis">
+  <div class="kpi"><b>3.14×</b><span>geomean cycle speedup, hand-optimized examples (example data)</span></div>
+  <div class="kpi"><b>11 / 11</b><span>buggy fake optimizers caught by the prototype evaluator</span></div>
+  <div class="kpi"><b>0 / 8</b><span>false alarms on honest fake optimizers</span></div>
+  <div class="kpi"><b>1.7 s</b><span>full prototype evaluation (320 checks), budget is 120 s</span></div>
+</div>
+
+<h2 id="big-picture">The mental model in one picture</h2>
+<p>We didn't build first. We set up the repo, built a measured understanding of the VM, then ran a tight <b>build → check → break the checker</b> loop on prototypes. Each loop either produced evidence or exposed a blind spot. Everything we learned went into <code>BUILD_PLAN.md</code> v2.</p>
+
+<div class="flow">
+  <div class="step"><span class="n">1 · Setup</span><b>Repo + tooling</b><small>push to GitHub, gh auth, PR Shepherd label, purge binaries</small></div>
+  <div class="step"><span class="n">2 · Understand</span><b>Read + probe</b><small>one-pager, all docs, 40 VM probes, cycle profile per instruction</small></div>
+  <div class="step"><span class="n">3 · Plan v1</span><b>BUILD_PLAN.md</b><small>requirements, rewrites, rubric, timeline</small></div>
+  <div class="step"><span class="n">4 · Research</span><b>3 subagents</b><small>optimizer, evaluator, working model</small></div>
+</div>
+<div class="loop">
+  <div class="loop-title">5 · Prototype loop (evidence before code)</div>
+  <div class="flow">
+    <div class="step"><span class="n">build</span><b>Hand-optimize 8 examples</b><small>q*.opt.mini, 3.14×</small></div>
+    <div class="step"><span class="n">check</span><b>cmp.py / check.py</b><small>every program × 40 datasets</small></div>
+    <div class="step"><span class="n">attack data</span><b>gen_data.py</b><small>NULLs, ties, empty tables, Unicode, literals from the programs</small></div>
+    <div class="step"><span class="n">attack checker</span><b>naive baselines + 19 fakes</b><small>does the checker catch known bugs?</small></div>
+    <div class="step"><span class="n">fix blind spot</span><b>order rule, type-safe compare</b><small>missed → caught</small></div>
+  </div>
+</div>
+<div class="flow">
+  <div class="step"><span class="n">6 · Package</span><b>prototype_code + README</b><small>run_all.sh, 1 minute from clean</small></div>
+  <div class="step"><span class="n">7 · Plan v2</span><b>BUILD_PLAN.md</b><small>status, lessons, cited safety rules, eval methods, JSON handoffs</small></div>
+  <div class="step"><span class="n">8 · Record</span><b>Session export</b><small>raw sessions, prompts, git history (text only)</small></div>
+</div>
+
+<h2 id="timeline">Step by step</h2>
+<p class="sub">Prompt times are UTC from the session log. Each prompt is paraphrased, followed by what was done.</p>
+
+<div class="phase">
+  <h3>Phase 1: Repository setup (prompts 1–6)</h3>
+  <p class="why">Get the work under version control on GitHub before anything else.</p>
+  <div class="prompt"><div class="meta">#1 19:50 · #2 19:52 · #3 19:55 · #4 19:56</div>
+    <q>Push this folder to github.com/sfc-gh-skodi/assessment_fde.</q>
+    <ul><li>The push failed: "repository not found" (private), then 403 for both logged-in gh accounts.</li>
+    <li>You logged in as <code>sfc-gh-skodi</code>, then <code>main</code> was pushed.</li></ul></div>
+  <div class="prompt"><div class="meta">#5 19:59 · #6 20:02</div>
+    <q>Activate PR Shepherd for this repo.</q>
+    <ul><li>I read the Google Doc you linked. PR Shepherd needs no repo setup: a PR is shepherded by adding the <code>shepherd</code> label.</li>
+    <li>I created the label. It will act once a PR exists. The Mac setup can't use the <code>/merge-pr</code> skill mode, which only runs in Cloud Workspaces.</li></ul></div>
+</div>
+
+<div class="phase">
+  <h3>Phase 2: Understand, then plan (prompts 7–10)</h3>
+  <p class="why">"Use bin/minivm to check facts. Don't guess."</p>
+  <div class="prompt"><div class="meta">#7 20:05 <span class="tag agent">2 subagents cancelled</span></div>
+    <q>Here is the initial prompt; research and come up with an efficient, scalable, testable plan.</q>
+    <ul><li>Read the one-pager, all 13 doc pages, the 8 examples, and the <code>optimize</code>/<code>evaluate</code> stubs.</li>
+    <li>All 8 examples reproduce their expected output exactly. 40 semantic probes (NULLs, joins, GROUP, NUM scale, errors). A per-instruction cycle profiler.</li>
+    <li>Found that the initial commit, already public, contained 5 VM binaries.</li></ul></div>
+  <div class="prompt"><div class="meta">#8 20:37 <span class="tag fix">course correction</span></div>
+    <q>You are overthinking the solution.</q>
+    <ul><li>Stopped researching and wrote <code>BUILD_PLAN.md</code> v1 from the facts already measured.</li></ul></div>
+  <div class="prompt"><div class="meta">#9 20:42 <span class="tag commit">force-push</span></div>
+    <q>Force push to remove binaries.</q>
+    <ul><li>Amended the single initial commit to remove <code>minivm-takehome/bin/</code> and git-ignored it. Force-pushed (<code>18358d8 → c8b59b8</code>).</li></ul></div>
+  <div class="prompt"><div class="meta">#10 20:44</div>
+    <q>ELI5: are test cases only from examples? How do we handle real-life programs?</q>
+    <ul><li>Partly. The plan relies on a program generator. Gap noted: no other schemas and no stress sizes.</li></ul></div>
+</div>
+
+<div class="phase">
+  <h3>Phase 3: Ground truth and research (prompts 11–12)</h3>
+  <div class="prompt"><div class="meta">#11 20:45</div>
+    <q>Note for each example what it computes, its cycles, where it wastes work.</q>
+    <ul><li>Wrote <code>notes/examples.md</code>. The waste patterns: dead columns, every column carried through each join, late filters, redundant sorts, quadratic self-joins.</li></ul></div>
+  <div class="prompt"><div class="meta">#12 20:50 <span class="tag agent">3 subagents</span> <span class="tag commit">27578ca</span></div>
+    <q>Use 3 subagents (optimizer, evaluator, working model) and commit.</q>
+    <ul><li><code>notes/research_optimizer.md</code>: q0007 2596→637, q0006 6338→2091, plus the NULL/error/order traps.</li>
+    <li><code>notes/research_evaluator.md</code>: differential testing, Csmith, SQLancer, Alive2; the wrapper is 5× slower than the binary.</li>
+    <li><code>notes/research_working_model.md</code>: roles, keep the checker out of the builder's context, test the tester.</li></ul></div>
+</div>
+
+<div class="phase">
+  <h3>Phase 4: Optimizer prototype (prompts 13–14)</h3>
+  <div class="prompt"><div class="meta">#13 21:02</div>
+    <q>Did you hand-write faster versions? Save them, plus a cmp.py.</q>
+    <ul><li>Honest answer: only 2 of 8 had been done. Wrote all 8, with <code>cmp.py</code> and <code>make_adv_data.py</code>: 56/56 pairs match, 3.09× geomean.</li>
+    <li>Sanity-checked the comparator with broken variants. Two of them were <b>invisible on the example data</b> (only 3 July orders, no ties).</li></ul></div>
+  <div class="prompt"><div class="meta">#14 21:09 <span class="tag fix">data gap fixed</span></div>
+    <q>Add tricky data (small/medium/large) and a check script; keep wrong versions as naive baselines.</q>
+    <ul><li><code>gen_data.py</code> (39 datasets, all pass <code>--schema</code>), <code>check.py</code>, 8 <code>q*.naive.mini</code>.</li>
+    <li>The q0004 baseline was missed at first: no category was ever <code>'KITCHEN'</code>. Fixed by harvesting literals from the programs, after which all 8 were caught.</li></ul></div>
+</div>
+
+<div class="phase">
+  <h3>Phase 5: Evaluator prototype and testing the tester (prompts 15–18)</h3>
+  <div class="prompt"><div class="meta">#15 21:16</div>
+    <q>Build eval-proto.py: multiset rows, 1e-6, exit 1 on any difference; print checked/skipped/defects/time.</q>
+    <ul><li>Identity optimizer: 0 defects. Hand-optimized: 0 defects. Naive: 138 defects. Slow, crashing and broken optimizers were all flagged.</li></ul></div>
+  <div class="prompt"><div class="meta">#16 21:19</div>
+    <q>Test it on a mix of buggy and honest fake optimizers, with evidence for each miss.</q>
+    <ul><li><code>fake_opt.py</code> (8 honest, 11 buggy) and <code>meta_eval.py</code>: 10/11 caught, 0 false alarms. <span class="bad">Missed: <code>b_reverse</code></span>, with evidence that the output was order-only different on up to 33 of 40 datasets.</li></ul></div>
+  <div class="prompt"><div class="meta">#17 21:25 <span class="tag fix">blind spot fixed</span></div>
+    <q>Add the row-order rule.</q>
+    <ul><li>A data-flow pass decides whether the original specifies order (SORT/TOPK reaching OUT). Defects for reverse / sort-flip / tie-break: 0→172, 4→134, 2→19.</li></ul></div>
+  <div class="prompt"><div class="meta">#18 21:27 <span class="tag fix">2 comparator bugs</span></div>
+    <q>Check more tricky rules: sort vs SORT, everything prints as text, platform binary vs wrapper, empty data…</q>
+    <ul><li><code>tricky_checks.py</code>: 56 checks. Found <span class="bad">JSON true == 1</span> and <span class="bad">"1.0 " parsed as a number</span>, both fixed.</li>
+    <li>The platform binary is 4.6× faster, so a full evaluation dropped from 8.4 s to 1.7 s. Results in <code>notes/tricky_rules.md</code>.</li></ul></div>
+</div>
+
+<div class="phase">
+  <h3>Phase 6: Package, re-plan, record (prompts 19–22)</h3>
+  <div class="prompt"><div class="meta">#19 21:32 <span class="tag commit">2be5e04</span></div>
+    <q>Package prototype_code with a README; delete unnecessary folders; commit.</q>
+    <ul><li>Removed caches and an empty <code>failures/</code>. The generated data rebuilds byte-for-byte, so it is git-ignored. Added <code>run_all.sh</code>, which runs green in 62 s.</li></ul></div>
+  <div class="prompt"><div class="meta">#20 21:40 · #21 21:44 <span class="tag commit">d899e82</span></div>
+    <q>Rewrite BUILD_PLAN.md with status, hidden lessons, cited safety rules, eval methods, assumptions, JSON agent formats.</q>
+    <ul><li>Plan v2: 12 items built and 7 still to build; 10 doc-cited safety rules; 7 evaluation methods compared; 10 assumptions, each with a default.</li></ul></div>
+  <div class="prompt"><div class="meta">#22 21:48</div>
+    <q>Create this mental-model HTML and save prompts, raw sessions and git history, with no binaries.</q>
+    <ul><li><code>tools/export_session.py</code> exports text only. 4 embedded PDF payloads were replaced with placeholders.</li></ul></div>
+</div>
+
+<h2 id="numbers">Key numbers</h2>
+<h3>Hand-optimized speedup per example (cycles, measured)</h3>
+<p class="legend"><i style="background: var(--bar)"></i>example data <i style="background: var(--bar2)"></i>large generated data (bars capped at 10×; label shows the real value)</p>
+<div class="bars">
+  <span>q0001</span><div class="track"><div class="fill" style="width: 80.8%"></div><span class="lbl">8.1×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 45.3%"></div><span class="lbl">4.5×</span></div>
+  <span>q0002</span><div class="track"><div class="fill" style="width: 18%"></div><span class="lbl">1.8×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 17.6%"></div><span class="lbl">1.8×</span></div>
+  <span>q0003</span><div class="track"><div class="fill" style="width: 30.4%"></div><span class="lbl">3.0×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 100%"></div><span class="lbl">37×</span></div>
+  <span>q0004</span><div class="track"><div class="fill" style="width: 84.6%"></div><span class="lbl">8.5×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 100%"></div><span class="lbl">47×</span></div>
+  <span>q0005</span><div class="track"><div class="fill" style="width: 16.8%"></div><span class="lbl">1.7×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 22%"></div><span class="lbl">2.2×</span></div>
+  <span>q0006</span><div class="track"><div class="fill" style="width: 30.3%"></div><span class="lbl">3.0×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 100%"></div><span class="lbl">20×</span></div>
+  <span>q0007</span><div class="track"><div class="fill" style="width: 40.8%"></div><span class="lbl">4.1×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 82.5%"></div><span class="lbl">8.3×</span></div>
+  <span>q0008</span><div class="track"><div class="fill" style="width: 12.2%"></div><span class="lbl">1.2×</span></div>
+  <span></span><div class="track"><div class="fill b2" style="width: 12.5%"></div><span class="lbl">1.3×</span></div>
+</div>
+
+<h3>Testing the tester: how each fix changed what the evaluator catches</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Stage</th><th>Buggy caught</th><th>False alarms</th><th>Order bugs (reverse / sort-flip / tie-break)</th><th>Full run</th></tr></thead>
+  <tbody>
+    <tr><td>eval-proto, multiset only</td><td>10 / 11</td><td>0 / 8</td><td><span class="bad">0</span> / 4 / 2 defects</td><td>8.4 s</td></tr>
+    <tr><td>+ order rule</td><td>11 / 11</td><td>0 / 8</td><td><span class="ok">172 / 134 / 19</span> defects</td><td>8.4 s</td></tr>
+    <tr><td>+ type-safe compare, platform binary</td><td>11 / 11</td><td>0 / 8</td><td>172 / 134 / 19 defects</td><td><span class="ok">1.7 s</span></td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="lessons">What we learned</h2>
+<ol>
+  <li><b>The big wins are generic.</b> Filter first, build strings late, gather only the columns that reach <code>OUT</code>, delete dead code, use TOPK. These gave 4–8.5× on q0001, q0004 and q0007. The self-join idioms win most on large data (20–47×), and they are the riskiest.</li>
+  <li><b>Correctness may use constraints, never stats.</b> <code>customers</code> has no key, so assuming <code>c_id</code> is unique is a real bug, caught by the q0004 baseline.</li>
+  <li><b>NULL semantics are the main trap.</b> HJOIN drops NULL keys but GROUP keeps them, and NULLIFE turns <code>''</code> into NULL.</li>
+  <li><b>An operation may only run on a subset of the rows it originally ran on.</b> Removing work can only remove errors, which is allowed.</li>
+  <li><b>Weak data hides bugs.</b> The example data passed two broken q0007 variants, and generated data missed a q0004 bug until literals from the programs were planted in it.</li>
+  <li><b>Multiset comparison is too lenient</b> when the program sorts, and an order rule fixes it. <b>The output JSON has no types</b>, so BOOL must never equal INT, and only text in minivm's own number format may be compared as a number.</li>
+  <li><b>Test the tester.</b> Zero defects proves nothing until seeded bugs are caught and honest-but-different optimizers pass.</li>
+  <li><b>Measure the harness too.</b> The platform binary is 4.6× faster than the wrapper, which leaves the 2-minute budget roomy.</li>
+</ol>
+
+<h2 id="course-corrections">Course corrections</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>When</th><th>What happened</th><th>Response</th></tr></thead>
+  <tbody>
+    <tr><td>#7</td><td>Two hand-optimization subagents were cancelled, and a long research pass was interrupted.</td><td>No retries. Kept only the facts already measured.</td></tr>
+    <tr><td>#8</td><td>"You are overthinking the solution."</td><td>Wrote the plan straight away from existing evidence.</td></tr>
+    <tr><td>#9</td><td>Binaries were in public git history.</td><td>Amended the commit and force-pushed, with your approval.</td></tr>
+    <tr><td>#13</td><td>Asked whether all 8 hand optimizations existed. Only 2 did.</td><td>Said so plainly, then wrote and verified all 8.</td></tr>
+    <tr><td>#14</td><td>A naive baseline was not caught.</td><td>Diagnosed it as weak data and harvested literals from the programs.</td></tr>
+    <tr><td>#16–18</td><td>The evaluator missed an order bug, and the comparator had 2 type bugs.</td><td>Added the order rule and type-safe comparison, then re-verified with the fakes and 56 checks.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="agents">Agents used</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Agent</th><th>Role</th><th>Outcome</th><th>Raw session</th></tr></thead>
+  <tbody>
+    <tr><td>Main session (orchestrator)</td><td>Planning, probes, prototypes, commits</td><td>All artifacts</td><td><code>cf78df4d…</code></td></tr>
+    <tr><td>Hand-optimize q0001–q0004</td><td>Research</td><td><span class="warn">cancelled by user</span></td><td><code>a4c00403…</code></td></tr>
+    <tr><td>Hand-optimize q0005–q0008</td><td>Research</td><td><span class="warn">cancelled by user</span></td><td><code>4130594d…</code></td></tr>
+    <tr><td>Research: optimizer rewrites</td><td>Research, read-only on the repo</td><td><code>notes/research_optimizer.md</code></td><td><code>eabb1914…</code></td></tr>
+    <tr><td>Research: evaluator methods</td><td>Research, read-only on the repo</td><td><code>notes/research_evaluator.md</code></td><td><code>d440e623…</code></td></tr>
+    <tr><td>Research: working model</td><td>Research, read-only on the repo</td><td><code>notes/research_working_model.md</code></td><td><code>debef74d…</code></td></tr>
+  </tbody>
+</table></div>
+<p>All agents ran on <code>claude-opus-5-5</code> in Cortex Code. The exact prompts are in <code>prompts/subagent_prompts.md</code>.</p>
+
+<h2 id="record">Session record in this repo</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+  <tbody>
+    <tr><td><code>ai-sessions/raw/</code></td><td>Raw Cortex Code session files (main + 5 subagents), <code>.json</code> metadata + <code>.history.jsonl</code> transcripts. Verbatim, except that 4 embedded base64 copies of the one-pager PDF are replaced by placeholders, so no binary content is committed.</td></tr>
+    <tr><td><code>prompts/user_prompts.md</code></td><td>All 22 user prompts in order, with timestamps (system reminders stripped).</td></tr>
+    <tr><td><code>prompts/subagent_prompts.md</code></td><td>The 5 prompts the main agent sent to subagents.</td></tr>
+    <tr><td><code>git-history/</code></td><td><code>git_log.txt</code> (log with stats), <code>git_log_patch.txt</code> (full text patches; binaries appear only as "Binary files differ"), <code>git_reflog.txt</code> (includes the amend and force-push).</td></tr>
+    <tr><td><code>tools/export_session.py</code></td><td>Regenerates all of the above: <code>python3 tools/export_session.py</code>.</td></tr>
+  </tbody>
+</table></div>
+<p class="sub">The export runs while the session is still in progress, so the final turn may be cut short. Re-run the script at the end to capture everything.</p>
+
+</body>
+</html>

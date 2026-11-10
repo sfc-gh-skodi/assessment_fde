@@ -1,0 +1,5 @@
+d899e82 HEAD@{2026-11-10 16:45:38 -0500}: commit: Rewrite build plan (v2) from notes and prototype results
+2be5e04 HEAD@{2026-11-10 16:35:26 -0500}: commit: Add optimizer/evaluator prototypes with tests of the evaluator
+27578ca HEAD@{2026-11-10 16:00:30 -0500}: commit: Add build plan, example analysis, and research notes
+c8b59b8 HEAD@{2026-11-10 15:42:46 -0500}: commit (amend): Initial commit: minivm take-home assessment
+18358d8 HEAD@{2026-11-10 14:43:16 -0500}: commit (initial): Initial commit: minivm take-home assessment

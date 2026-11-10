@@ -1,0 +1,142 @@
+commit d899e82196a02b7920d3545c5cedc234646b1d2d
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 16:45:38 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 16:45:38 2026 -0500
+
+    Rewrite build plan (v2) from notes and prototype results
+    
+    Adds build status, lessons from hand-optimizing the examples, doc-cited
+    safety rules, a comparison of evaluation methods, defaults for unclear
+    rules, and JSON handoff formats for the agent loop.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ BUILD_PLAN.md | 449 ++++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 293 insertions(+), 156 deletions(-)
+
+commit 2be5e04edd5576e9dab1a6bb4173d41bc1186986
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 16:35:26 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 16:35:26 2026 -0500
+
+    Add optimizer/evaluator prototypes with tests of the evaluator
+    
+    Hand-optimized examples (3.1x geomean), known-bad baselines, schema-driven
+    tricky data, and a prototype evaluator with an order-aware, type-safe
+    comparator, validated against 19 fake optimizers (11/11 bugs caught, 0 false
+    alarms). Generated data is git-ignored and rebuilt from seeds by run_all.sh.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .gitignore                                      |   4 +
+ notes/tricky_rules.md                           |  36 +++
+ prototype_code/README.md                        |  72 ++++++
+ prototype_code/evaluator_agent/eval-proto.py    | 313 ++++++++++++++++++++++++
+ prototype_code/evaluator_agent/fake_opt.py      | 218 +++++++++++++++++
+ prototype_code/evaluator_agent/meta_eval.py     |  93 +++++++
+ prototype_code/evaluator_agent/meta_report.md   |  44 ++++
+ prototype_code/evaluator_agent/tricky_checks.py | 124 ++++++++++
+ prototype_code/optimizer_agent/check.py         |  94 +++++++
+ prototype_code/optimizer_agent/cmp.py           | 117 +++++++++
+ prototype_code/optimizer_agent/gen_data.py      | 310 +++++++++++++++++++++++
+ prototype_code/optimizer_agent/hand_opt.sh      |   4 +
+ prototype_code/optimizer_agent/make_adv_data.py |  83 +++++++
+ prototype_code/optimizer_agent/naive_opt.sh     |   4 +
+ prototype_code/optimizer_agent/q0001.naive.mini |  32 +++
+ prototype_code/optimizer_agent/q0001.opt.mini   |  35 +++
+ prototype_code/optimizer_agent/q0002.naive.mini |  34 +++
+ prototype_code/optimizer_agent/q0002.opt.mini   |  36 +++
+ prototype_code/optimizer_agent/q0003.naive.mini |  29 +++
+ prototype_code/optimizer_agent/q0003.opt.mini   |  31 +++
+ prototype_code/optimizer_agent/q0004.naive.mini |  53 ++++
+ prototype_code/optimizer_agent/q0004.opt.mini   |  53 ++++
+ prototype_code/optimizer_agent/q0005.naive.mini |  41 ++++
+ prototype_code/optimizer_agent/q0005.opt.mini   |  44 ++++
+ prototype_code/optimizer_agent/q0006.naive.mini |  27 ++
+ prototype_code/optimizer_agent/q0006.opt.mini   |  28 +++
+ prototype_code/optimizer_agent/q0007.naive.mini |  26 ++
+ prototype_code/optimizer_agent/q0007.opt.mini   |  28 +++
+ prototype_code/optimizer_agent/q0008.naive.mini |  23 ++
+ prototype_code/optimizer_agent/q0008.opt.mini   |  22 ++
+ prototype_code/run_all.sh                       |  17 ++
+ 31 files changed, 2075 insertions(+)
+
+commit 27578ca6798a94a39c38e17780136c740b646bdb
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 16:00:30 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 16:00:30 2026 -0500
+
+    Add build plan, example analysis, and research notes
+    
+    Plan and research ground the optimizer/evaluator design before any code:
+    per-example cycle profile, optimizer rewrite ranking, evaluator methods,
+    and the orchestrator-evaluator working model.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ BUILD_PLAN.md                   | 213 ++++++++++++++++++++++++++++++++++++++++
+ notes/INITIAL_PROMPT.md         |  50 ++++++++++
+ notes/examples.md               |  86 ++++++++++++++++
+ notes/research_evaluator.md     |  84 ++++++++++++++++
+ notes/research_optimizer.md     |  64 ++++++++++++
+ notes/research_working_model.md |  64 ++++++++++++
+ 6 files changed, 561 insertions(+)
+
+commit c8b59b87480b3f098975eef965b305943f0b8b1c
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 14:43:16 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 15:42:46 2026 -0500
+
+    Initial commit: minivm take-home assessment
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .gitignore                                      |    2 +
+ minivm-onepager.pdf                             |  Bin 0 -> 108981 bytes
+ minivm-takehome/docs/README.md                  |   46 +
+ minivm-takehome/docs/cycles.md                  |  110 ++
+ minivm-takehome/docs/instructions/README.md     |  141 ++
+ minivm-takehome/docs/instructions/arithmetic.md |   87 ++
+ minivm-takehome/docs/instructions/columns.md    |   85 ++
+ minivm-takehome/docs/instructions/dates.md      |   54 +
+ minivm-takehome/docs/instructions/grouping.md   |  114 ++
+ minivm-takehome/docs/instructions/joins.md      |   40 +
+ minivm-takehome/docs/instructions/logic.md      |  124 ++
+ minivm-takehome/docs/instructions/sorting.md    |   53 +
+ minivm-takehome/docs/instructions/strings.md    |   89 ++
+ minivm-takehome/docs/language.md                |   80 ++
+ minivm-takehome/docs/running.md                 |  178 +++
+ minivm-takehome/docs/values.md                  |   76 ++
+ minivm-takehome/evaluate                        |    3 +
+ minivm-takehome/examples/data.json              | 1663 +++++++++++++++++++++++
+ minivm-takehome/examples/expected/q0001.json    |   30 +
+ minivm-takehome/examples/expected/q0002.json    |   41 +
+ minivm-takehome/examples/expected/q0003.json    |   66 +
+ minivm-takehome/examples/expected/q0004.json    |   10 +
+ minivm-takehome/examples/expected/q0005.json    |   14 +
+ minivm-takehome/examples/expected/q0006.json    |  156 +++
+ minivm-takehome/examples/expected/q0007.json    |   21 +
+ minivm-takehome/examples/expected/q0008.json    |   21 +
+ minivm-takehome/examples/programs/q0001.mini    |   91 ++
+ minivm-takehome/examples/programs/q0002.mini    |   42 +
+ minivm-takehome/examples/programs/q0003.mini    |   35 +
+ minivm-takehome/examples/programs/q0004.mini    |  123 ++
+ minivm-takehome/examples/programs/q0005.mini    |   82 ++
+ minivm-takehome/examples/programs/q0006.mini    |   36 +
+ minivm-takehome/examples/programs/q0007.mini    |   51 +
+ minivm-takehome/examples/programs/q0008.mini    |   32 +
+ minivm-takehome/examples/schema.json            | 1258 +++++++++++++++++
+ minivm-takehome/optimize                        |    3 +
+ 36 files changed, 5057 insertions(+)
