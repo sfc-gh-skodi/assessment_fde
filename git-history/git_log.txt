@@ -1,3 +1,40 @@
+commit 09754ed31a6d98f8c5cc3916d634a904e1bf6ae5
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 17:11:44 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 17:11:44 2026 -0500
+
+    Capture both sessions per-session and auto-export via a Cortex Code hook
+    
+    Prompts are now written per session (prompts/<id8>_*.md) with an INDEX, so
+    exporting one session can no longer overwrite another; a Stop/SessionEnd hook
+    re-exports any session working in this repo after every turn. Also includes
+    the plan-review session's record, PLAN_REVIEW.md and its BUILD_PLAN updates.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ BUILD_PLAN.md                                      |    53 +-
+ PLAN_REVIEW.md                                     |   232 +
+ ...L_MODEL.html => PLAN_SESSION_MENTAL_MODEL.html} |    20 +-
+ ...2a2eb-0227-4b40-bd66-eb44210c3e63.history.jsonl |   195 +
+ .../raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.json  |    33 +
+ ...8df4d-6085-4d1f-90b5-dfd32d2a4e14.history.jsonl |    52 +
+ .../raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.json  |    38 +-
+ ai-sessions/review_session.html                    |   287 +
+ git-history/git_log.txt                            |    37 +
+ git-history/git_log_patch.txt                      | 10174 +++++++++++++++++++
+ git-history/git_reflog.txt                         |     1 +
+ prompts/2502a2eb_subagent_prompts.md               |     3 +
+ prompts/2502a2eb_user_prompts.md                   |   177 +
+ prompts/INDEX.md                                   |     8 +
+ ...ent_prompts.md => cf78df4d_subagent_prompts.md} |     2 +
+ .../{user_prompts.md => cf78df4d_user_prompts.md}  |    64 +-
+ tools/export_session.py                            |   183 +-
+ tools/hooks/export_session_hook.sh                 |    34 +
+ 18 files changed, 11474 insertions(+), 119 deletions(-)
+
 commit 81d10bde82c7b2118643ba745fb169c8abb5ffed
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Tue Nov 10 16:59:47 2026 -0500
