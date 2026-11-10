@@ -1,0 +1,26 @@
+; NAIVE (known-bad): TOPK 5 over all orders, then filters to July 2023 (filter must come first).
+load    r1, orders.o_id
+load    r3, orders.o_date
+load    r4, orders.o_amt
+topk    t, 5, r4 DESC NL, r1 ASC NF
+gather  d5, r3, t
+year    y, d5
+eq      a, y, 2023
+month   m, d5
+eq      b, m, 7
+and     c, a, b
+idx     w, c
+gather  r30b, t, w
+gather  o1, r1, r30b
+gather  o4, r4, r30b
+load    r6, orders.o_status
+load    r7, orders.o_note
+gather  n7, r7, r30b
+gather  n6, r6, r30b
+nvl     r8, n7, ''
+nvl     r9, n6, ''
+cat     r10, r8, ' '
+cat     r11, r10, r9
+nullife r12, r11
+left    r13, r12, 40
+out     o1, o4, r13

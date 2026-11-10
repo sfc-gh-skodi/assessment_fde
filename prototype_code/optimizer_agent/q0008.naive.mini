@@ -1,0 +1,23 @@
+; NAIVE (known-bad): picks each group's FIRST spelling (GFIRST) instead of GMIN.
+LOAD    o_qty, orders.o_qty
+GE      f, o_qty, 5
+IDX     w_w, f
+GATHER  w_o_qty, o_qty, w_w
+LOAD    o_status, orders.o_status
+GATHER  w_o_status, o_status, w_w
+NULLIFE xk, w_o_status
+RTRIM   k_t, xk
+UPPER   k, k_t
+GROUP   g, k
+GFIRST  gf0, g
+GATHER  rep, xk, gf0
+GCOUNT  a0, g
+GSUM    a1, g, w_o_qty
+LEFT    sk_l, rep, 10
+RTRIM   sk_t, sk_l
+UPPER   sk, sk_t
+SORT    q, a0 DESC NL, sk ASC NF
+GATHER  o_rep, rep, q
+GATHER  o_a0, a0, q
+GATHER  o_a1, a1, q
+OUT     o_rep, o_a0, o_a1

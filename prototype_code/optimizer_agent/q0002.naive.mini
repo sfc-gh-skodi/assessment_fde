@@ -1,0 +1,34 @@
+; NAIVE (known-bad): also restricts the COUNTED side to qualifying orders (should be all discounted lines).
+load   lo, lines.l_order
+load   ld, lines.l_disc
+gt     dpos, ld, 0.0
+idx    dw, dpos
+gather dlo, lo, dw
+load   od, orders.o_date
+year   y, od
+eq     e, y, 2023
+load   oa, orders.o_amt
+gt     g, oa, 300.00
+and    m, e, g
+idx    oi, m
+load   oid, orders.o_id
+gather fo, oid, oi
+hjoin  a, b, dlo, fo
+gather ow, dw, a
+load   lp, lines.l_prod
+gather opr, lp, ow
+gather dpr, lp, ow
+load   lq, lines.l_qty
+gather oq, lq, ow
+gather dq, lq, ow
+hjoin  x, z, opr, dpr
+gather qa, oq, x
+gather qb, dq, z
+lt     hit, qb, qa
+if     one, hit, 1, 0
+group  gg, x
+gsum   cnt, gg, one
+gather r1, lo, ow
+load   ln, lines.l_no
+gather r2, ln, ow
+out    r1, r2, cnt

@@ -1,0 +1,35 @@
+; q0001 hand-optimized: filter orders first, join lines to the few surviving orders,
+; build the label only for surviving lines. lines is sorted by (l_order,l_no) so the
+; original SORT is the identity; GE l_qty,1 is always TRUE (not_null, check [1,500]).
+; l_prod->products and p_cat->categories are not_null refs to keys: exactly one match.
+LOAD    od, orders.o_date
+YEAR    y, od
+EQ      e, y, 2024
+LOAD    oa, orders.o_amt
+GT      g, oa, 750.00
+AND     m, e, g
+IDX     oi, m
+LOAD    oid, orders.o_id
+GATHER  fo, oid, oi
+LOAD    lo, lines.l_order
+HJOIN   li, ri, lo, fo
+GATHER  o1, lo, li
+LOAD    ln, lines.l_no
+GATHER  o2, ln, li
+LOAD    lp, lines.l_prod
+GATHER  o3, lp, li
+LOAD    pid, products.p_id
+HJOIN   pi, pj, o3, pid
+LOAD    pnm, products.p_name
+GATHER  nm, pnm, pj
+LOAD    pcat, products.p_cat
+GATHER  cat, pcat, pj
+LOAD    kid, categories.k_id
+HJOIN   ki, kj, cat, kid
+LOAD    knm, categories.k_name
+GATHER  kn, knm, kj
+NVL     n1, nm, ''
+CAT     c1, n1, ' / '
+CAT     c2, c1, kn
+LEFT    lab, c2, 40
+OUT     o1, o2, o3, lab

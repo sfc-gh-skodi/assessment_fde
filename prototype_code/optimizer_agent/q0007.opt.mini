@@ -1,0 +1,28 @@
+; q0007 hand-optimized: filter to July 2023 first, TOPK 5 instead of a full SORT,
+; build the label only for the 5 output rows; dead UPPER/DOW removed.
+load    r1, orders.o_id
+load    r3, orders.o_date
+load    r4, orders.o_amt
+year    r25, r3
+eq      r26, r25, 2023
+month   r27, r3
+eq      r28, r27, 7
+and     r29, r26, r28
+idx     r30, r29
+gather  a1, r1, r30
+gather  a4, r4, r30
+topk    t, 5, a4 DESC NL, a1 ASC NF
+gather  r30b, r30, t
+gather  o1, r1, r30b
+gather  o4, r4, r30b
+load    r6, orders.o_status
+load    r7, orders.o_note
+gather  n7, r7, r30b
+gather  n6, r6, r30b
+nvl     r8, n7, ''
+nvl     r9, n6, ''
+cat     r10, r8, ' '
+cat     r11, r10, r9
+nullife r12, r11
+left    r13, r12, 40
+out     o1, o4, r13

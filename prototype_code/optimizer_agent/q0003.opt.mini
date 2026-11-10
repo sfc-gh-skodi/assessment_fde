@@ -1,0 +1,31 @@
+; q0003 hand-optimized: replace the quadratic "count of better rows" self-join with a
+; sort by (status, id DESC) and a per-group rank; NULL keys removed first, as HJOIN did.
+; o_id is the key, so ids are unique and there are no ties.
+load    r1, orders.o_id
+load    r3, orders.o_status
+nullife r4, r3
+rtrim   r5, r4
+upper   r6, r5
+isnull  kn, r6
+not     kk, kn
+idx     w, kk
+gather  k, r6, w
+gather  id, r1, w
+sort    p, k ASC NF, id DESC NF
+gather  ks, k, p
+group   g, ks
+gid     gi, g
+gfirst  gf, g
+iota    pos, ks
+gather  start, gf, gi
+sub     rank, pos, start
+lt      keep, rank, 4
+idx     kw, keep
+gather  sel, p, kw
+gather  ids, id, sel
+sort    p2, ids ASC NF
+gather  out1, ids, p2
+gather  sw, w, sel
+gather  sw2, sw, p2
+gather  st, r3, sw2
+out     out1, st, out1

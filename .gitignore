@@ -1,2 +1,6 @@
 .DS_Store
 minivm-takehome/bin/
+__pycache__/
+*.pyc
+prototype_code/optimizer_agent/data/
+prototype_code/optimizer_agent/failures/

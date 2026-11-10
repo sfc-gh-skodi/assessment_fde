@@ -1,0 +1,41 @@
+; NAIVE (known-bad): joins lines to every card payment without de-duplicating orders (double counts).
+LOAD    ym, payments.y_method
+NULLIFE m1, ym
+RTRIM   m2, m1
+UPPER   m3, m2
+IS      card, m3, 'CARD'
+IDX     ci, card
+LOAD    yo, payments.y_order
+GATHER  co, yo, ci
+GROUP   gco, co
+GFIRST  fco, gco
+GATHER  uco, co, fco
+LOAD    lo, lines.l_order
+HJOIN   la, lb, lo, co
+LOAD    lp, lines.l_prod
+GATHER  lp2, lp, la
+LOAD    pid, products.p_id
+HJOIN   pi, pj, lp2, pid
+LOAD    pcat, products.p_cat
+GATHER  cat, pcat, pj
+LOAD    lq, lines.l_qty
+GATHER  q, lq, la
+LOAD    lpr, lines.l_price
+GATHER  p, lpr, la
+LOAD    ld, lines.l_disc
+GATHER  d, ld, la
+SUB     om, 1, d
+MUL     qp, q, p
+MUL     rv, qp, om
+GROUP   g, cat
+GSUM    s, g, rv
+GFIRST  f, g
+GATHER  key, cat, f
+SORT    o, key ASC NF
+GATHER  ks, key, o
+GATHER  ss, s, o
+LOAD    kid, categories.k_id
+NLJOIN  ki, kj, ks, kid
+LOAD    knm, categories.k_name
+GATHER  nm, knm, kj
+OUT     nm, ss

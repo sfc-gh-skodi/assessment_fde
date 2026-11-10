@@ -1,0 +1,27 @@
+; NAIVE (known-bad): GROUP without filtering NULL keys (HJOIN never matched NULL; GROUP groups them).
+LOAD    r1, orders.o_id
+LOAD    r2, orders.o_status
+LOAD    r3, orders.o_qty
+LOAD    r4, orders.o_amt
+LOAD    r5, orders.o_date
+GE      r6, r5, #2023-01-01#
+NULLIFE r13, r2
+RTRIM   r14, r13
+UPPER   r15, r14
+ISNULL  nn, r15
+NOT     ok, nn
+AND     k, r6, r6
+IDX     r7, k
+GATHER  key, r15, r7
+GATHER  qty, r3, r7
+GROUP   g, key
+GMAX    m, g, qty
+GID     gi, g
+GATHER  mx, m, gi
+GATHER  id, r1, r7
+SORT    s, id ASC NF
+GATHER  o1, id, s
+GATHER  ia, r7, s
+GATHER  o2, r4, ia
+GATHER  o3, mx, s
+OUT     o1, o2, o3

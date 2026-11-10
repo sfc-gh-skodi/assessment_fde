@@ -1,0 +1,53 @@
+; q0004 hand-optimized: filter each table first (categories, customers, orders), then
+; join only qualifying rows. customers has no key, so the orders x customers join keeps
+; its multiplicity exactly like the original. GSUM/GCOUNT are order-independent, so the
+; "audit trail" SORT and the dead UPPER are dropped.
+LOAD    kn, categories.k_name
+NULLIFE kn1, kn
+RTRIM   kn2, kn1
+UPPER   kn3, kn2
+IS      kk, kn3, 'KITCHEN'
+IDX     ki, kk
+LOAD    kid, categories.k_id
+GATHER  kids, kid, ki
+LOAD    pcat, products.p_cat
+NLJOIN  pi, pj, pcat, kids
+LOAD    pid, products.p_id
+GATHER  kp, pid, pi
+LOAD    cr, customers.c_region
+NULLIFE cr1, cr
+RTRIM   cr2, cr1
+UPPER   cr3, cr2
+IS      cc, cr3, 'CENTRAL'
+IDX     ci, cc
+LOAD    cid, customers.c_id
+GATHER  ccid, cid, ci
+LOAD    od, orders.o_date
+YEAR    y, od
+EQ      e, y, 2023
+IDX     oi, e
+LOAD    ocu, orders.o_cust
+GATHER  ocf, ocu, oi
+LOAD    oid, orders.o_id
+GATHER  oidf, oid, oi
+HJOIN   a, b, ocf, ccid
+GATHER  oo, oidf, a
+LOAD    lo, lines.l_order
+HJOIN   la, lb, lo, oo
+LOAD    lp, lines.l_prod
+GATHER  lp2, lp, la
+HJOIN   x, z, lp2, kp
+GATHER  rw, la, x
+LOAD    lq, lines.l_qty
+GATHER  q, lq, rw
+LOAD    lpr, lines.l_price
+GATHER  p, lpr, rw
+LOAD    ld, lines.l_disc
+GATHER  d, ld, rw
+SUB     om, 1, d
+MUL     qp, q, p
+MUL     rv, qp, om
+GALL    gg, rv
+GSUM    tot, gg, rv
+GCOUNT  n, gg
+OUT     tot, n
