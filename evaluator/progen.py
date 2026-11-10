@@ -139,10 +139,37 @@ class P:
         self.emit(rng.choice(["GT", "GE", "LT", "LE", "EQ", "NE"]), m, c.reg, lit)
         return m
 
-    def conj(self, cols, k):
+    def predicate2(self, cols):
+        """predicate(), sometimes negated (3-valued NOT) or a null-safe IS test."""
+        rng = self.rng
+        r = rng.random()
+        if r < 0.08:
+            c = rng.choice(cols)
+            m = self.fresh("f")
+            self.emit("IS", m, c.reg, "NULL")
+            if rng.random() < 0.6:
+                m2 = self.fresh("f")
+                self.emit("NOT", m2, m)
+                return m2
+            return m
+        if r < 0.14:
+            same = [(x, y) for x in cols for y in cols if x is not y and x.type == y.type and x.type != "BOOL"]
+            if same:
+                x, y = rng.choice(same)
+                m = self.fresh("f")
+                self.emit(rng.choice(["IS", "EQ", "LT"]), m, x.reg, y.reg)
+                return m
         m = self.predicate(cols)
+        if r > 0.85:
+            m2 = self.fresh("f")
+            self.emit("NOT", m2, m)
+            return m2
+        return m
+
+    def conj(self, cols, k):
+        m = self.predicate2(cols)
         for _ in range(k - 1):
-            m2 = self.predicate(cols)
+            m2 = self.predicate2(cols)
             r = self.fresh("f")
             self.emit("AND" if self.rng.random() < 0.8 else "OR", r, m, m2)
             m = r
@@ -189,6 +216,23 @@ class P:
                 self.emit("DOW", self.fresh("d"), c.reg, comment="weekday split (removed)")
         return out
 
+    def guarded_div(self, cols):
+        """keep rows with a non-zero divisor, then divide (the filter guards the DIV)."""
+        nums = [c for c in cols if c.type in NUMT]
+        if not nums:
+            return cols
+        ia, ib = cols.index(self.rng.choice(nums)), cols.index(self.rng.choice(nums))
+        m = self.fresh("nz")
+        self.emit("NE", m, cols[ib].reg, 0, comment="avoid divide by zero")
+        i = self.fresh("w")
+        self.emit("IDX", i, m)
+        cols = self.gather_all(cols, i)
+        a2, b2 = cols[ia], cols[ib]
+        op = self.rng.choice(["DIV", "DIV", "IDIV", "MOD"]) if a2.type == b2.type == "INT" else "DIV"
+        q = self.fresh("ratio")
+        self.emit(op, q, a2.reg, b2.reg)
+        return cols + [Col(q, "NUM" if op == "DIV" else "INT")]
+
     # ---- joins
     def join_options(self, cols):
         opts = []
@@ -226,7 +270,10 @@ class P:
         oc = next(o for o in other if o.name.lower() == tc.lower())
         li, ri = self.fresh("j"), self.fresh("j")
         op = "NLJOIN" if self.rng.random() < 0.15 else "HJOIN"
-        self.emit(op, li, ri, c.reg, oc.reg)
+        if c.nullable and oc.nullable and self.rng.random() < 0.3:
+            self.emit(op, li, ri, c.reg, oc.reg, "NULLEQ", comment="old outer-join port: NULL keys match")
+        else:
+            self.emit(op, li, ri, c.reg, oc.reg)
         return self.gather_all(cols, li) + self.gather_all(other, ri), True
 
     # ---- idioms
@@ -247,7 +294,10 @@ class P:
             kr = self.fresh("u")
             self.emit("UPPER", kr, b)
         a, b = self.fresh("a"), self.fresh("b")
-        self.emit("HJOIN", a, b, kr, kr, comment="every pair with the same key")
+        if k.nullable and rng.random() < 0.3:
+            self.emit("HJOIN", a, b, kr, kr, "NULLEQ", comment="every pair with the same key, NULLs together")
+        else:
+            self.emit("HJOIN", a, b, kr, kr, comment="every pair with the same key")
         vb = self.fresh()
         self.emit("GATHER", vb, v.reg, b)
         g = self.fresh("g")
@@ -282,10 +332,30 @@ class P:
 
     def finish(self, cols):
         rng = self.rng
-        kind = rng.choice(["proj", "sort", "sort", "topn", "group", "gall"])
+        kind = rng.choice(["proj", "sort", "sort", "topn", "group", "gall", "topk", "topn_filter", "proj_bool"])
         out = rng.sample(cols, min(len(cols), rng.randint(1, 4)))
         if kind == "proj":
             self.emit("OUT", *[c.reg for c in out])
+        elif kind == "proj_bool":
+            m = self.predicate2(cols)
+            self.emit("OUT", *([c.reg for c in out[:2]] + [m]))
+        elif kind == "topk":
+            keys = self.sort_keys(cols, rng.choice([1, 2]))
+            p = self.fresh("k")
+            self.emit("TOPK", p, rng.choice([1, 2, 5, 10, 25]), *keys)
+            outs = self.gather_all(out, p)
+            self.emit("OUT", *[c.reg for c in outs])
+        elif kind == "topn_filter":           # top N first, then filter the N (order of the two matters)
+            keys = self.sort_keys(cols, rng.choice([1, 2]))
+            p = self.fresh("s")
+            self.emit("SORT", p, *keys)
+            outs = self.gather_all(cols, p)
+            i = self.fresh("k")
+            self.emit("IOTA", i, outs[0].reg)
+            self.emit("SLICE", i, i, rng.choice([3, 5, 10, 20]))
+            outs = self.gather_all(outs, i)
+            outs = self.filt(outs, 1)
+            self.emit("OUT", *[c.reg for c in outs[:rng.randint(1, 4)]])
         elif kind in ("sort", "topn"):
             keys = self.sort_keys(cols, rng.choice([1, 2, 2]))
             p = self.fresh("s")
@@ -362,6 +432,8 @@ class P:
                 break
         extra = self.computed(cols)
         cols = cols + extra
+        if rng.random() < 0.15:
+            cols = self.guarded_div(cols)
         if rng.random() < 0.25:
             cols, _ = self.self_join_agg(cols)
         if rng.random() < 0.3:      # sort, then filter (filter-before-sort is equivalent)

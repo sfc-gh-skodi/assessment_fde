@@ -73,6 +73,29 @@ def lit_type(tok):
     return "NUM" if "." in t else "INT"
 
 
+# ---------------------------------------------------------------- canonical text (fast path)
+def canon_text(prog):
+    """Program text with registers renamed by first appearance and opcodes/keywords upper-cased.
+    Two programs with the same canon_text are the same program (registers are a bijection)."""
+    names = {}
+    out = []
+
+    def tok(t):
+        if t.startswith("'") or t.startswith("#"):
+            return t
+        parts = t.split()
+        res = []
+        for i, w in enumerate(parts):
+            if i == 0 and reg(w) == w and "." not in w:
+                res.append(names.setdefault(w, f"%{len(names)}"))
+            else:
+                res.append(w.upper() if w.upper() in KEYWORDS else w)
+        return " ".join(res)
+    for op, a in prog:
+        out.append(op + " " + ",".join(tok(t) for t in a))
+    return "\n".join(out)
+
+
 # ---------------------------------------------------------------- does the original specify order?
 def output_ordered(prog):
     ordered, mono = set(), set()
@@ -179,9 +202,25 @@ def out_types(prog, schema):
 
 
 # ---------------------------------------------------------------- tie keys by instrumenting the original
-def instrument(prog):
+def uncut(prog):
+    """the program with its cut-offs removed: TOPK n -> SORT, SLICE n -> SLICE (all)."""
+    out = []
+    for op, a in prog:
+        if op == "TOPK" and len(a) >= 3:
+            out.append(("SORT", [a[0]] + a[2:]))
+        elif op == "SLICE" and len(a) == 3:
+            out.append(("SLICE", [a[0], a[1], "4000000000"]))
+        else:
+            out.append((op, a))
+    return out
+
+
+def instrument(prog, no_cut=False):
     """Return a program text whose OUT has the original columns followed by the sort keys
-    (of every SORT/TOPK that orders the output, latest first), or None if they can't be traced."""
+    (of every SORT/TOPK that orders the output, latest first), or None if they can't be traced.
+    no_cut: instrument uncut(prog) instead (every row tied at a cut-off is then in the output)."""
+    if no_cut:
+        prog = uncut(prog)
     # SSA-rename so overwrites can't confuse the path search
     ver, ssa = {}, []
 
@@ -385,19 +424,38 @@ def row_close(x, y, types):
     return len(x) == len(y) and all(close(p, q, types[i] if i < len(types) else None) for i, (p, q) in enumerate(zip(x, y)))
 
 
+def _sortkey(v, t=None):
+    if t not in ("STR", "DATE"):
+        n = num(v)
+        if n is not None:
+            return (1, n, "")
+    return (0, 0, json.dumps(v, ensure_ascii=False))
+
+
 def same_multiset(ra, rb, types):
     if len(ra) != len(rb):
         return False
-    key = lambda r: tuple(canon(v, types[i] if i < len(types) else None) for i, v in enumerate(r))
-    if Counter(map(key, ra)) == Counter(map(key, rb)):
+    ty = lambda i: types[i] if i < len(types) else None
+    key = lambda r: tuple(canon(v, ty(i)) for i, v in enumerate(r))
+    ca, cb = Counter(map(key, ra)), Counter(map(key, rb))
+    if ca == cb:
         return True
-    sa, sb = sorted(ra, key=key), sorted(rb, key=key)
+    # rows equal only within the numeric tolerance: match the leftovers, sorted by value
+    rep = {}
+    for r in list(ra) + list(rb):
+        rep.setdefault(key(r), r)
+    la = [rep[k] for k, n in (ca - cb).items() for _ in range(n)]
+    lb = [rep[k] for k, n in (cb - ca).items() for _ in range(n)]
+    if len(la) != len(lb):
+        return False
+    sk = lambda r: tuple(_sortkey(v, ty(i)) for i, v in enumerate(r))
+    sa, sb = sorted(la, key=sk), sorted(lb, key=sk)
     if all(row_close(x, y, types) for x, y in zip(sa, sb)):
         return True
-    if len(ra) > 3000:
+    if len(la) > 3000:
         return False
-    unused = list(rb)
-    for x in ra:
+    unused = list(lb)
+    for x in la:
         for i, y in enumerate(unused):
             if row_close(x, y, types):
                 del unused[i]
@@ -419,25 +477,47 @@ def tie_blocks(keys):
     return blocks
 
 
-def compare(orig, opt, ordered, types, keyed=None, cutoff=False):
-    """orig/opt: VM result dicts. keyed: the instrumented original's rows (cols + keys) or None.
+def _tied_at_cutoff(ra, rb, keyed, full, nc, types):
+    """True if rb differs from ra only in rows tied with ra's last sort-key block, i.e. every
+    row of rb outside ra's earlier blocks is a row the uncut original ties at the cut-off."""
+    if keyed is None or full is None or len(ra) != len(rb) or len(keyed) != len(ra):
+        return False
+    blocks = tie_blocks([r[nc:] for r in keyed])
+    if not blocks:
+        return False
+    if not all(same_multiset([ra[i] for i in b], [rb[i] for i in b], types) for b in blocks[:-1]):
+        return False
+    last = blocks[-1]
+    lk = tuple(canon(v) for v in keyed[last[0]][nc:])
+    cand = [r[:nc] for r in full if tuple(canon(v) for v in r[nc:]) == lk]
+    unused = list(cand)
+    for y in (rb[i] for i in last):
+        for j, x in enumerate(unused):
+            if row_close(x, y, types):
+                del unused[j]
+                break
+        else:
+            return False
+    return True
+
+
+def compare(orig, opt, ordered, types, keyed=None, cutoff=False, full=None):
+    """orig/opt: VM result dicts. keyed: the instrumented original's rows (cols + keys) or None;
+    full: the same for the original with its cut-offs removed (uncut) or None.
     -> (status, detail) with status OK | WARN | DEFECT."""
     if orig["ncols"] != opt["ncols"]:
         return "DEFECT", f"ncols {orig['ncols']} vs {opt['ncols']}"
     ra, rb = orig["rows"], opt["rows"]
+    nc = orig["ncols"]
     if not same_multiset(ra, rb, types):
-        if ordered and cutoff and keyed is not None and len(ra) == len(rb):
-            nc = orig["ncols"]
-            blocks = tie_blocks([r[nc:] for r in keyed])
-            if blocks and all(same_multiset([ra[i] for i in b], [rb[i] for i in b], types) for b in blocks[:-1]):
-                return "WARN", "differs only among rows tied at a TOPK/SLICE cut-off"
+        if ordered and cutoff and _tied_at_cutoff(ra, rb, keyed, full, nc, types):
+            return "WARN", "differs only among rows tied at a TOPK/SLICE cut-off"
         return "DEFECT", f"rows differ ({len(ra)} vs {len(rb)} rows)"
     if not ordered:
         return "OK", ""
     if all(row_close(x, y, types) for x, y in zip(ra, rb)):
         return "OK", ""
     if keyed is not None and len(keyed) == len(ra):
-        nc = orig["ncols"]
         blocks = tie_blocks([r[nc:] for r in keyed])
         if all(same_multiset([ra[i] for i in b], [rb[i] for i in b], types) for b in blocks):
             return "OK", "tied rows reordered"

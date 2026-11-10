@@ -245,6 +245,13 @@ class Gen:
                 rows = rows[:len(ids)]
                 for r, v in zip(rows, ids):
                     r[ki] = v
+        if len(rows) >= 2 and rng.random() < 0.7:
+            # duplicates: whole rows in tables without a key, rows equal except the key otherwise
+            kset = {names.index(k) for k in key}
+            for i in range(1, len(rows)):
+                if rng.random() < 0.2:
+                    src = rows[rng.randrange(i)]
+                    rows[i] = [rows[i][j] if j in kset else src[j] for j in range(len(names))]
         if key:
             kis = [names.index(k) for k in key]
             seen, uniq = set(), []
