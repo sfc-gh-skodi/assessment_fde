@@ -23,7 +23,9 @@
       { "id": "numbers", "title": "Key numbers", "dataSources": [{ "type": "file", "path": "prototype_code/README.md" }, { "type": "file", "path": "prototype_code/evaluator_agent/meta_report.md" }], "producerNotes": "Cycle counts measured with bin/minivm; refresh with prototype_code/run_all.sh." },
       { "id": "lessons", "title": "What we learned", "dataSources": [{ "type": "file", "path": "BUILD_PLAN.md" }] },
       { "id": "course-corrections", "title": "Course corrections", "dataSources": [{ "type": "file", "path": "prompts/cf78df4d_user_prompts.md" }] },
+      { "id": "ai-usage", "title": "AI models and usage", "dataSources": [{ "type": "query", "sql": "SELECT f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits, MIN(h.USAGE_TIME), MAX(h.USAGE_TIME) FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'desktop' AND h.USAGE_TIME >= '2026-11-10 19:49:00 +0000' GROUP BY f.key ORDER BY credits DESC" }], "producerNotes": "Queried 2026-11-10 ~22:23 UTC. Attributed by interface (desktop) and session start; includes the 5 subagents (they run inside this Desktop session). The view lags up to 1 hour." },
       { "id": "agents", "title": "Agents used", "dataSources": [{ "type": "file", "path": "prompts/cf78df4d_subagent_prompts.md" }] },
+      { "id": "ai-usage", "title": "AI models and rough usage", "dataSources": [{ "type": "file", "path": "ai-sessions/raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.json" }], "producerNotes": "Uses the saved session metadata; spend is not available in the export, so this section reports rough token usage only." },
       { "id": "record", "title": "Session record in this repo", "producerNotes": "Regenerate with python3 tools/export_session.py" }
     ]
   }
@@ -91,7 +93,7 @@
 <body>
 
 <h1>Session mental model: MiniVM take-home, planning and prototyping</h1>
-<p class="sub">Cortex Code session <code>cf78df4d-6085-4d1f-90b5-dfd32d2a4e14</code> · 2026-11-10 · model <code>claude-opus-5-5</code> · 22 user prompts · 5 subagents · 4 commits</p>
+<p class="sub">Cortex Code session <code>cf78df4d-6085-4d1f-90b5-dfd32d2a4e14</code> · 2026-11-10 · model <code>claude-opus-5-5</code> (prompts 1–6 on <code>claude-sonnet-5-5</code>) · 22 user prompts · 5 subagents · 4 commits · ≈ 15.8 credits</p>
 
 <div class="kpis">
   <div class="kpi"><b>3.14×</b><span>geomean cycle speedup, hand-optimized examples (example data)</span></div>
@@ -271,6 +273,25 @@
   </tbody>
 </table></div>
 
+<h2 id="ai-usage">AI models and usage</h2>
+<p>Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, filtered to user <code>SKODI</code>, interface <code>desktop</code>, from the session start (19:49 UTC). Queried 2026-11-10 ~22:23 UTC. It includes the 5 subagents, which run inside this Desktop session.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Model</th><th>Used for</th><th>Requests</th><th>Cache-read tokens</th><th>Cache-write tokens</th><th>Output tokens</th><th>Credits</th></tr></thead>
+  <tbody>
+    <tr><td><code>claude-opus-5-5</code></td><td>main agent and all subagents, from prompt 7 (20:05 UTC) on</td><td>191</td><td>54,460,529</td><td>1,846,366</td><td>401,560</td><td>15.49</td></tr>
+    <tr><td><code>claude-sonnet-5-5</code></td><td>main agent for prompts 1–6: repo setup, gh auth, PR Shepherd (19:50–20:03 UTC)</td><td>21</td><td>2,489,352</td><td>135,316</td><td>4,686</td><td>0.35</td></tr>
+    <tr><td><code>gemini-3.7-flash</code></td><td>auxiliary (small helper model)</td><td>6</td><td>0</td><td>0</td><td>2,057</td><td>0.01</td></tr>
+    <tr><td><b>Total</b></td><td></td><td>—<sup>*</sup></td><td>56,949,881</td><td>1,981,682</td><td>408,303</td><td><b>≈ 15.84 credits</b></td></tr>
+  </tbody>
+</table></div>
+<p><b>Roughly ~59M tokens processed, almost all of it re-read context served from cache, plus ~0.4M output tokens. ≈ 15.8 Snowflake credits.</b> Uncached input was negligible: 2,680 tokens. The dollar cost depends on the account's credit price.</p>
+<ul>
+  <li><b>Why it's so large:</b> each turn re-sends the whole conversation, so a long session is dominated by cache reads.</li>
+  <li><sup>*</sup> Per-model request counts overlap, because one request can use several models, so they are not summed.</li>
+  <li><b>How usage is attributed:</b> the usage view has no session-id column, so usage is attributed by interface and time window. Any other Desktop chat by this user after 19:49 UTC would be counted here too.</li>
+  <li><b>Lag:</b> the view can lag up to 1 hour, so the last turns may not be included.</li>
+</ul>
+
 <h2 id="agents">Agents used</h2>
 <div class="table-wrap"><table>
   <thead><tr><th>Agent</th><th>Role</th><th>Outcome</th><th>Raw session</th></tr></thead>
@@ -284,6 +305,16 @@
   </tbody>
 </table></div>
 <p>All agents ran on <code>claude-opus-5-5</code> in Cortex Code. The exact prompts are in <code>prompts/cf78df4d_subagent_prompts.md</code>.</p>
+
+<h2 id="ai-usage">AI models and rough usage</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Component</th><th>Model</th><th>Rough usage</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Main session</td><td><code>claude-opus-5-5</code></td><td>At least <code>462,145</code> input tokens and <code>235</code> output tokens visible in the saved session metadata</td><td>The export exposes the last saved orchestration-turn usage, not a full session bill.</td></tr>
+    <tr><td>Subagents</td><td><code>claude-opus-5-5</code></td><td>5 subagent sessions were used</td><td>The raw export shows the subagent session ids, but not a complete summed token total across all of them.</td></tr>
+    <tr><td>Spend</td><td>Not recorded</td><td>Unavailable from the saved export</td><td>No reliable dollar figure is present in the exported session files, so this report stops at rough token usage.</td></tr>
+  </tbody>
+</table></div>
 
 <h2 id="record">Session record in this repo</h2>
 <div class="table-wrap"><table>

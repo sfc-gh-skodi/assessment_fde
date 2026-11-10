@@ -2,7 +2,7 @@
 
 Session `cf78df4d-6085-4d1f-90b5-dfd32d2a4e14` · Push Folder to Repository
 
-prompts: 33
+prompts: 36
 
 ## 1. 2026-11-10 19:50:14 UTC
 
@@ -155,3 +155,15 @@ no changes added to commit (use "git add" and/or "git commit -a")
 ## 33. 2026-11-10 22:17:58 UTC
 
 ok
+
+## 34. 2026-11-10 22:20:29 UTC
+
+can you also add for each session as part of the hook : Which AI models you used, and roughly how many tokens or how much spend.
+
+## 35. 2026-11-10 22:23:43 UTC
+
+add Which AI models you used, and roughly how many tokens or how much spend. to the html files for each session
+
+## 36. 2026-11-10 22:28:30 UTC
+
+commit and push all pending changes from both sessions

@@ -2,7 +2,7 @@
 
 Session `2502a2eb-0227-4b40-bd66-eb44210c3e63` · Auditing MiniVM Prototype Code and Refining Build Plan
 
-prompts: 36
+prompts: 40
 
 ## 1. 2026-11-10 21:45:33 UTC
 
@@ -199,3 +199,21 @@ waht is this session id?
 ## 36. 2026-11-10 22:15:28 UTC
 
 waht is this session id?
+
+## 37. 2026-11-10 22:24:02 UTC
+
+add Which AI models you used, and roughly how many tokens or how much spend. to the html files for each session
+
+## 38. 2026-11-10 22:24:02 UTC
+
+add Which AI models you used, and roughly how many tokens or how much spend. to the html files for each session
+
+## 39. 2026-11-10 22:24:30 UTC
+
+add Which AI models you used, and roughly how many tokens or how much spend. to the 
+  html files for each session
+
+## 40. 2026-11-10 22:24:30 UTC
+
+add Which AI models you used, and roughly how many tokens or how much spend. to the 
+  html files for each session

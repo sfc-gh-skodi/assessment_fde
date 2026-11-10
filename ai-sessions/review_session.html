@@ -50,6 +50,15 @@
         "producerNotes": "Lists the files changed during this review-focused session."
       },
       {
+        "id": "ai-usage",
+        "title": "AI models and usage",
+        "dataSources": [
+          { "type": "query", "sql": "SELECT f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'cli' AND h.USAGE_TIME >= '2026-11-10 21:45:00 +0000' GROUP BY f.key ORDER BY credits DESC" },
+          { "type": "file", "path": "~/.snowflake/cortex/stats/usage.json" }
+        ],
+        "producerNotes": "Queried 2026-11-10 ~22:23 UTC. The view has no session-id column, so usage is attributed by interface (cli) and the session's start time; the view lags up to 1 hour. Cross-checked: openai-gpt-5.4 cache-read 7,538,176 and output 19,309 match the local usage.json entry for this session exactly."
+      },
+      {
         "id": "export-record",
         "title": "Saved session record",
         "dataSources": [
@@ -242,6 +251,28 @@
       </tbody>
     </table>
   </div>
+
+  <h2 id="ai-usage">AI models and usage</h2>
+  <p>Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, filtered to user <code>SKODI</code>, interface <code>cli</code>, from the session start (21:45 UTC). Queried 2026-11-10 ~22:23 UTC.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Model</th><th>Role</th><th>Requests</th><th>Input tokens (uncached)</th><th>Cache-read tokens</th><th>Output tokens</th><th>Credits</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>openai-gpt-5.4</code></td><td>main agent</td><td>66</td><td>2,492,838</td><td>7,538,176</td><td>19,309</td><td>4.65</td></tr>
+        <tr><td><code>gemini-3.7-flash</code></td><td>auxiliary (small helper model)</td><td>17</td><td>29,599</td><td>0</td><td>14,531</td><td>0.04</td></tr>
+        <tr><td><b>Total</b></td><td></td><td>—<sup>*</sup></td><td>2,522,437</td><td>7,538,176</td><td>33,840</td><td><b>≈ 4.70 credits</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><b>Roughly ~10M tokens processed (≈ 75% served from cache), ≈ 4.7 Snowflake credits.</b> The dollar cost depends on the account's credit price (the Service Consumption Table rate × the contract price).</p>
+  <ul>
+    <li><b>Cross-check:</b> the <code>openai-gpt-5.4</code> cache-read (7,538,176) and output (19,309) counts match the local <code>~/.snowflake/cortex/stats/usage.json</code> entry for this session exactly.</li>
+    <li><sup>*</sup> Per-model request counts overlap, because one request can use several models, so they are not summed.</li>
+  <li><b>How usage is attributed:</b> the usage view has no session-id column, so usage is attributed by interface and time window. Any other CLI request after 21:45 UTC would be counted here too.</li>
+    <li><b>Lag:</b> the view can lag up to 1 hour, so the last turns may not be included.</li>
+  </ul>
 
   <h2 id="export-record">Saved session record</h2>
   <p>The export is intentionally text-only. No binaries were copied into the repo for this record.</p>

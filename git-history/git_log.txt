@@ -1,3 +1,29 @@
+commit 438c9a259daa6ec3e17d1ed0fdea677fccbcb4d1
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 17:19:21 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 17:19:21 2026 -0500
+
+    Stop the export hook from rewriting git-history on every turn
+    
+    The hook now passes --no-git, so each commit no longer reappears as a diff;
+    git-history is refreshed by a manual export before the final commit.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ ...8df4d-6085-4d1f-90b5-dfd32d2a4e14.history.jsonl |     8 +
+ .../raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.json  |    36 +-
+ git-history/git_log.txt                            |    24 +
+ git-history/git_log_patch.txt                      | 12540 +++++++++++++++++++
+ git-history/git_reflog.txt                         |     1 +
+ prompts/INDEX.md                                   |     2 +-
+ prompts/cf78df4d_user_prompts.md                   |    19 +-
+ tools/export_session.py                            |    15 +-
+ tools/hooks/export_session_hook.sh                 |     7 +-
+ 9 files changed, 12625 insertions(+), 27 deletions(-)
+
 commit 0b557ed29c638268832cdae0eb914fd9b8658263
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Tue Nov 10 17:16:38 2026 -0500
