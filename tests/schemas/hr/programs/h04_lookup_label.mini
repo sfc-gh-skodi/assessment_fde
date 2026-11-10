@@ -1,0 +1,31 @@
+; medium: e_dept is not_null refs depts key (exactly one match); a UPPER/CAT label is built for every row before the late dept/salary filter
+LOAD   ei, emps.e_id
+LOAD   en, emps.e_name
+LOAD   ed, emps.e_dept
+LOAD   es, emps.e_salary
+LOAD   et, emps.e_title
+LOAD   di, depts.d_id
+LOAD   dn, depts.d_name
+HJOIN  li, ri, ed, di
+GATHER a_id, ei, li
+GATHER a_nm, en, li
+GATHER a_sl, es, li
+GATHER a_tt, et, li
+GATHER a_dn, dn, ri
+NVL    t1, a_tt, '?'
+UPPER  t2, a_nm
+CAT    t3, t2, ' / '
+CAT    t4, t3, t1
+LEFT   lab, t4, 14
+EQ     m1, a_dn, 'Sales EMEA'
+GT     m2, a_sl, 60000
+OR     m, m1, m2
+IDX    i, m
+GATHER o1, a_id, i
+GATHER o2, lab, i
+GATHER o3, a_dn, i
+SORT   s, o1 ASC NF
+GATHER r1, o1, s
+GATHER r2, o2, s
+GATHER r3, o3, s
+OUT    r1, r2, r3

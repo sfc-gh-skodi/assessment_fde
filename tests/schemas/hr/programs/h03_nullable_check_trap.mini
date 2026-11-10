@@ -1,0 +1,10 @@
+; easy TRAP: e_salary has check [1000, 500000] but is nullable, so GE e_salary, 1000 drops the NULL rows and must stay (S8)
+LOAD   id, emps.e_id
+LOAD   nm, emps.e_name
+LOAD   sl, emps.e_salary
+GE     m, sl, 1000
+IDX    i, m
+GATHER a, id, i
+GATHER b, nm, i
+GATHER c, sl, i
+OUT    a, b, c

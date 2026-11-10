@@ -1,0 +1,13 @@
+; easy TRAP: GROUP on a constant key gives 0 groups on an empty input, GALL gives 1; rewriting this GROUP into GALL is wrong when the o_amt filter is empty
+LOAD   amt, orders.o_amt
+LOAD   q, orders.o_qty
+GT     m, amt, 900.00
+IDX    i, m
+GATHER a, amt, i
+GATHER b, q, i
+FILL   one, 1, a
+GROUP  g, one
+GSUM   s, g, a
+GCOUNT n, g
+GMAX   x, g, b
+OUT    s, n, x

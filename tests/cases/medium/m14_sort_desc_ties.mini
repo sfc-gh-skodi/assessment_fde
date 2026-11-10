@@ -1,0 +1,16 @@
+; medium TRAP: SORT o_status DESC NL then o_date ASC NF, ties stable on o_id; NL/NF must keep their meaning under DESC. Filter on o_qty after the sort can move before it
+LOAD   id, orders.o_id
+LOAD   st, orders.o_status
+LOAD   dt, orders.o_date
+LOAD   q, orders.o_qty
+SORT   p, st DESC NL, dt ASC NF
+GATHER a, id, p
+GATHER b, st, p
+GATHER c, dt, p
+GATHER d, q, p
+GE     m, d, 5
+IDX    i, m
+GATHER a2, a, i
+GATHER b2, b, i
+GATHER c2, c, i
+OUT    a2, b2, c2

@@ -1,0 +1,31 @@
+; complex: average shift hours per employee (GROUP on the sorted shifts table, DIV by a count that is never 0), joined to emps, salary-not-NULL filter last, top 4 by average DESC then id
+LOAD   se, shifts.sh_emp
+LOAD   sh, shifts.sh_hours
+LOAD   ei, emps.e_id
+LOAD   en, emps.e_name
+LOAD   es, emps.e_salary
+GROUP  g, se
+GFIRST f, g
+GATHER ke, se, f
+GSUM   tot, g, sh
+GCOUNT n, g
+DIV    avg, tot, n
+HJOIN  li, ri, ke, ei
+GATHER a_e, ke, li
+GATHER a_v, avg, li
+GATHER a_n, en, ri
+GATHER a_s, es, ri
+ISNULL sn, a_s
+NOT    m, sn
+IDX    i, m
+GATHER b_e, a_e, i
+GATHER b_v, a_v, i
+GATHER b_n, a_n, i
+SORT   s, b_v DESC NL, b_e ASC NF
+GATHER c_e, b_e, s
+GATHER c_v, b_v, s
+GATHER c_n, b_n, s
+SLICE  o1, c_e, 4
+SLICE  o2, c_v, 4
+SLICE  o3, c_n, 4
+OUT    o1, o2, o3

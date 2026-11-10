@@ -1,0 +1,14 @@
+; easy TRAP: NUM scale. ADD p, l_price, 0.000 looks like an identity but rescales every value (S5), and GMIN returns the first of equal values (1.0 vs 1.00); per-order min and sum of rescaled prices
+LOAD   lo, lines.l_order
+LOAD   lp, lines.l_price
+LOAD   ld, lines.l_disc
+LOAD   lq, lines.l_qty          ; dead
+ADD    p, lp, 0.000
+MUL    d1, ld, 1
+GROUP  g, lo
+GFIRST f, g
+GATHER k, lo, f
+GMIN   mn, g, p
+GSUM   sm, g, p
+GMAX   mx, g, d1
+OUT    k, mn, sm, mx

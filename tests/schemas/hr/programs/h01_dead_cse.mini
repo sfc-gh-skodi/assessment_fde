@@ -1,0 +1,16 @@
+; easy: dead loads, the same column loaded twice and the same predicate computed twice; won deals above 1000
+LOAD   id, deals.dl_id
+LOAD   am, deals.dl_amount
+LOAD   am2, deals.dl_amount
+LOAD   st, deals.dl_stage
+LOAD   cl, deals.dl_closed      ; dead
+LOAD   em, deals.dl_emp         ; dead
+GT     m1, am, 1000
+GT     m2, am2, 1000
+EQ     w, st, 'won'
+AND    m, m1, w
+AND    mm, m, m2
+IDX    i, mm
+GATHER a, id, i
+GATHER b, am2, i
+OUT    a, b

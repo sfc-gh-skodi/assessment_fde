@@ -1,0 +1,12 @@
+; medium TRAP: SORT + SLICE 4 -> TOPK 4 over dl_amount DESC NL with ties written at different scales (980 vs 980.00, 1.0 vs 1.00); ties keep input order (S4/S5)
+LOAD   id, deals.dl_id
+LOAD   am, deals.dl_amount
+LOAD   st, deals.dl_stage
+SORT   p, am DESC NL
+GATHER a, id, p
+GATHER b, am, p
+GATHER c, st, p
+SLICE  a1, a, 4
+SLICE  b1, b, 4
+SLICE  c1, c, 4
+OUT    a1, b1, c1

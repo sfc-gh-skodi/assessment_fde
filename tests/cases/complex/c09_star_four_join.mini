@@ -1,0 +1,50 @@
+; complex TRAP: 4-join star (lines -> products -> suppliers, lines -> orders -> customers). customers has NO key, so the o_cust join can fan out (S8); revenue per supplier region of 2024 orders, filters at the very end, sorted by revenue DESC then region
+LOAD   lo, lines.l_order
+LOAD   lp, lines.l_prod
+LOAD   lq, lines.l_qty
+LOAD   lr, lines.l_price
+LOAD   pi, products.p_id
+LOAD   ps, products.p_supp
+LOAD   si, suppliers.s_id
+LOAD   sr, suppliers.s_region
+LOAD   oi, orders.o_id
+LOAD   oc, orders.o_cust
+LOAD   od, orders.o_date
+LOAD   ci, customers.c_id
+LOAD   cs, customers.c_since
+MUL    rev, lq, lr
+HJOIN  a1, b1, lp, pi
+GATHER t_lo, lo, a1
+GATHER t_rev, rev, a1
+GATHER t_ps, ps, b1
+HJOIN  a2, b2, t_ps, si
+GATHER u_lo, t_lo, a2
+GATHER u_rev, t_rev, a2
+GATHER u_sr, sr, b2
+HJOIN  a3, b3, u_lo, oi
+GATHER v_rev, u_rev, a3
+GATHER v_sr, u_sr, a3
+GATHER v_oc, oc, b3
+GATHER v_od, od, b3
+HJOIN  a4, b4, v_oc, ci
+GATHER w_rev, v_rev, a4
+GATHER w_sr, v_sr, a4
+GATHER w_od, v_od, a4
+GATHER w_cs, cs, b4
+YEAR   yr, w_od
+EQ     m1, yr, 2024
+LT     m2, w_cs, #2023-01-01#
+AND    m, m1, m2
+IDX    i, m
+GATHER x_rev, w_rev, i
+GATHER x_sr, w_sr, i
+GROUP  g, x_sr
+GFIRST f, g
+GATHER key, x_sr, f
+GSUM   tot, g, x_rev
+GCOUNT n, g
+SORT   s, tot DESC NL, key ASC NF
+GATHER o1, key, s
+GATHER o2, tot, s
+GATHER o3, n, s
+OUT    o1, o2, o3

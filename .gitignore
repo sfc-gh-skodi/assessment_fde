@@ -6,3 +6,5 @@ prototype_code/optimizer_agent/data/
 prototype_code/optimizer_agent/failures/
 eval_out/
 runs/*/tmp/
+tests/data/
+tests/stress/

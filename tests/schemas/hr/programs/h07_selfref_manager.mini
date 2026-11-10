@@ -1,0 +1,20 @@
+; medium: self-reference e_mgr refs emps.e_id (nullable: at most one match); each employee hired since 2020 with the manager's name; the hire filter is applied last
+LOAD   ei, emps.e_id
+LOAD   en, emps.e_name
+LOAD   em, emps.e_mgr
+LOAD   eh, emps.e_hired
+HJOIN  li, ri, em, ei
+GATHER a_id, ei, li
+GATHER a_nm, en, li
+GATHER a_h, eh, li
+GATHER m_nm, en, ri
+GE     m, a_h, #2020-01-01#
+IDX    i, m
+GATHER o1, a_id, i
+GATHER o2, a_nm, i
+GATHER o3, m_nm, i
+SORT   s, o1 ASC NF
+GATHER r1, o1, s
+GATHER r2, o2, s
+GATHER r3, o3, s
+OUT    r1, r2, r3

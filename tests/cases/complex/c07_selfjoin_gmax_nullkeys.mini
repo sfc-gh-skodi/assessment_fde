@@ -1,0 +1,21 @@
+; complex TRAP: self-join on customers.c_region then GMAX per left row = the max credit in each customer's region. Rewrite to GROUP + GMAX + GID must filter NULL regions (HJOIN never matches NULL, GROUP does) (S3); customers has no key
+LOAD   ci, customers.c_id
+LOAD   cn, customers.c_name
+LOAD   cr, customers.c_region
+LOAD   cc, customers.c_credit
+HJOIN  a, b, cr, cr
+GATHER va, cc, a
+GATHER vb, cc, b
+GROUP  g, a
+GFIRST f, g
+GATHER pos, a, f
+GMAX   mx, g, vb
+GATHER oi, ci, pos
+GATHER on, cn, pos
+GATHER oc, cc, pos
+SORT   s, oi ASC NF, on ASC NF
+GATHER r1, oi, s
+GATHER r2, on, s
+GATHER r3, oc, s
+GATHER r4, mx, s
+OUT    r1, r2, r3, r4

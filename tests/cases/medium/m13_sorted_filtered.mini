@@ -1,0 +1,19 @@
+; medium: lines is sorted by (l_order, l_no); after an IDX filter the rows stay sorted, so the SORT is the identity (S9). The second SORT (DESC) is NOT the identity and must stay
+LOAD   lo, lines.l_order
+LOAD   ln, lines.l_no
+LOAD   lq, lines.l_qty
+LOAD   lp, lines.l_price
+GT     m, lq, 10
+IDX    i, m
+GATHER a, lo, i
+GATHER b, ln, i
+GATHER c, lp, i
+SORT   s, a ASC NF, b ASC NF
+GATHER a1, a, s
+GATHER b1, b, s
+GATHER c1, c, s
+SORT   t, a1 DESC NF
+GATHER a2, a1, t
+GATHER b2, b1, t
+GATHER c2, c1, t
+OUT    a2, b2, c2

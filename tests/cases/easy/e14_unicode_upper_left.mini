@@ -1,0 +1,13 @@
+; easy TRAP: UPPER can change the character count (straße -> STRASSE), so LEFT(UPPER(s)) != UPPER(LEFT(s)) (S6); label built before the c_credit filter can move after it
+LOAD   nm, customers.c_name
+LOAD   cr, customers.c_credit
+LOAD   id, customers.c_id
+UPPER  u, nm
+LEFT   l, u, 4
+LEN    n, l
+GT     m, cr, 2000.00
+IDX    i, m
+GATHER a, id, i
+GATHER b, l, i
+GATHER c, n, i
+OUT    a, b, c

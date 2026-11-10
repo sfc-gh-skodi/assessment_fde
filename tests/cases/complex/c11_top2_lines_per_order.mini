@@ -1,0 +1,37 @@
+; complex: the lines of each 2023 order with fewer than 2 pricier lines in the same order (ties kept), "count of better rows" self-join via NLJOIN; the 2023 filter is applied last; by order and line
+LOAD   lo, lines.l_order
+LOAD   ln, lines.l_no
+LOAD   lp, lines.l_price
+NLJOIN a, b, lo, lo
+GATHER pa, lp, a
+GATHER pb, lp, b
+GT     hit, pb, pa
+IF     one, hit, 1, 0
+GROUP  g, a
+GFIRST f, g
+GATHER pos, a, f
+GSUM   better, g, one
+LT     keep, better, 2
+IDX    k, keep
+GATHER kp, pos, k
+GATHER r_lo, lo, kp
+GATHER r_ln, ln, kp
+GATHER r_lp, lp, kp
+LOAD   oi, orders.o_id
+LOAD   od, orders.o_date
+HJOIN  c, d, r_lo, oi
+GATHER s_lo, r_lo, c
+GATHER s_ln, r_ln, c
+GATHER s_lp, r_lp, c
+GATHER s_od, od, d
+YEAR   yr, s_od
+EQ     m, yr, 2023
+IDX    i, m
+GATHER t_lo, s_lo, i
+GATHER t_ln, s_ln, i
+GATHER t_lp, s_lp, i
+SORT   s, t_lo ASC NF, t_ln ASC NF
+GATHER o1, t_lo, s
+GATHER o2, t_ln, s
+GATHER o3, t_lp, s
+OUT    o1, o2, o3

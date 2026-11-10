@@ -1,0 +1,22 @@
+; medium TRAP: events has NO key and no refs (ev_emp may be NULL or dangle); employees with at least one login event: de-duplicate by employee row after the fan-out join (S8)
+LOAD   ei, emps.e_id
+LOAD   en, emps.e_name
+LOAD   ve, events.ev_emp
+LOAD   vk, events.ev_kind
+LOAD   va, events.ev_at          ; dead
+HJOIN  li, ri, ei, ve
+GATHER k, vk, ri
+EQ     m, k, 'login'
+IDX    i, m
+GATHER lp, li, i
+GROUP  g, lp
+GFIRST f, g
+GATHER pos, lp, f
+GCOUNT n, g
+GATHER a, ei, pos
+GATHER b, en, pos
+SORT   s, a ASC NF
+GATHER a1, a, s
+GATHER b1, b, s
+GATHER n1, n, s
+OUT    a1, b1, n1

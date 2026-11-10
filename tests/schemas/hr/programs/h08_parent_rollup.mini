@@ -1,0 +1,37 @@
+; complex: deals -> emps -> depts -> parent depts (3 joins; d_parent is a nullable self-ref); won-deal total per parent department, stage cleaned with RTRIM/UPPER, filter applied after all joins; by total DESC then name
+LOAD   da, deals.dl_amount
+LOAD   de, deals.dl_emp
+LOAD   ds, deals.dl_stage
+LOAD   ei, emps.e_id
+LOAD   ed, emps.e_dept
+LOAD   di, depts.d_id
+LOAD   dp, depts.d_parent
+LOAD   dn, depts.d_name
+RTRIM  s1, ds
+UPPER  s2, s1
+HJOIN  l1, r1, de, ei
+GATHER x_a, da, l1
+GATHER x_s, s2, l1
+GATHER x_d, ed, r1
+HJOIN  l2, r2, x_d, di
+GATHER y_a, x_a, l2
+GATHER y_s, x_s, l2
+GATHER y_p, dp, r2
+HJOIN  l3, r3, y_p, di
+GATHER z_a, y_a, l3
+GATHER z_s, y_s, l3
+GATHER z_n, dn, r3
+EQ     m, z_s, 'WON'
+IDX    i, m
+GATHER w_a, z_a, i
+GATHER w_n, z_n, i
+GROUP  g, w_n
+GFIRST f, g
+GATHER key, w_n, f
+GSUM   tot, g, w_a
+GCOUNT n, g
+SORT   s, tot DESC NL, key ASC NF
+GATHER o1, key, s
+GATHER o2, tot, s
+GATHER o3, n, s
+OUT    o1, o2, o3

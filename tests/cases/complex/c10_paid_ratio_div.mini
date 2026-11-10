@@ -1,0 +1,30 @@
+; complex TRAP: payments summed per order, joined to orders, then paid / o_amt with DIV only after the o_amt > 0 filter (o_amt is nullable and may be 0: hoisting DIV adds an error, S1/S2); top 5 by ratio DESC, id ASC via SORT + SLICE
+LOAD   yo, payments.y_order
+LOAD   ya, payments.y_amt
+LOAD   oi, orders.o_id
+LOAD   oa, orders.o_amt
+LOAD   os, orders.o_status
+GROUP  g, yo
+GFIRST f, g
+GATHER ko, yo, f
+GSUM   paid, g, ya
+HJOIN  li, ri, ko, oi
+GATHER p1, paid, li
+GATHER i1, oi, ri
+GATHER a1, oa, ri
+GATHER s1, os, ri
+GT     m, a1, 0
+IDX    i, m
+GATHER p2, p1, i
+GATHER i2, i1, i
+GATHER a2, a1, i
+GATHER s2, s1, i
+DIV    r, p2, a2
+SORT   s, r DESC NL, i2 ASC NF
+GATHER o1, i2, s
+GATHER o2, r, s
+GATHER o3, s2, s
+SLICE  q1, o1, 5
+SLICE  q2, o2, 5
+SLICE  q3, o3, 5
+OUT    q1, q2, q3

@@ -1,0 +1,29 @@
+; medium: an order label (CAT + LEFT) is built for every order before the payments lookup join and the late y_method/y_amt filter; build it only for surviving rows
+LOAD   oi, orders.o_id
+LOAD   os, orders.o_status
+LOAD   on, orders.o_note
+NVL    n1, on, '-'
+CAT    l1, os, ': '
+CAT    l2, l1, n1
+LEFT   lab, l2, 12
+LOAD   yi, payments.y_id
+LOAD   yo, payments.y_order
+LOAD   ym, payments.y_method
+LOAD   ya, payments.y_amt
+HJOIN  li, ri, yo, oi
+GATHER pid, yi, li
+GATHER pm, ym, li
+GATHER pa, ya, li
+GATHER pl, lab, ri
+EQ     m1, pm, 'card'
+GT     m2, pa, 100.00
+AND    m, m1, m2
+IDX    i, m
+GATHER a, pid, i
+GATHER b, pl, i
+GATHER c, pa, i
+SORT   s, a ASC NF
+GATHER a1, a, s
+GATHER b1, b, s
+GATHER c1, c, s
+OUT    a1, b1, c1

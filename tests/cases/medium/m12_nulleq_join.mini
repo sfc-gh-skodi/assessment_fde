@@ -1,0 +1,17 @@
+; medium TRAP: NULLEQ join; customers.c_region and suppliers.s_region are nullable and NULL pairs with NULL here. Dropping NULLEQ, or a GROUP-based rewrite without it, is wrong. Late filter on s_rating
+LOAD   cr, customers.c_region
+LOAD   cn, customers.c_name
+LOAD   sr, suppliers.s_region
+LOAD   sn, suppliers.s_name
+LOAD   rt, suppliers.s_rating
+HJOIN  li, ri, cr, sr, NULLEQ
+GATHER a, cn, li
+GATHER b, sn, ri
+GATHER c, rt, ri
+GATHER d, cr, li
+GE     m, c, 2
+IDX    i, m
+GATHER a2, a, i
+GATHER b2, b, i
+GATHER d2, d, i
+OUT    a2, b2, d2

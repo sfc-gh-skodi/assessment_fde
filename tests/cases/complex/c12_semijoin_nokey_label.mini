@@ -1,0 +1,28 @@
+; complex TRAP: customers with at least one 'open' order (semi-join). customers has no key: de-duplicate by customer ROW (left position), not by c_id (S8). Upper-cased name label built for all customers before the join; sorted by name then id
+LOAD   ci, customers.c_id
+LOAD   cn, customers.c_name
+LOAD   cr, customers.c_region
+UPPER  un, cn
+LEFT   lab, un, 5
+LOAD   oc, orders.o_cust
+LOAD   os, orders.o_status
+HJOIN  li, ri, ci, oc
+GATHER js, os, ri
+EQ     m, js, 'open'
+IDX    i, m
+GATHER lp, li, i
+SORT   s, lp ASC NF
+GATHER sp, lp, s
+GROUP  g, sp
+GFIRST f, g
+GATHER pos, sp, f
+GATHER r1, ci, pos
+GATHER r2, cn, pos
+GATHER r3, lab, pos
+GATHER r4, cr, pos
+SORT   t, r2 ASC NL, r1 ASC NL
+GATHER o1, r1, t
+GATHER o2, r2, t
+GATHER o3, r3, t
+GATHER o4, r4, t
+OUT    o1, o2, o3, o4

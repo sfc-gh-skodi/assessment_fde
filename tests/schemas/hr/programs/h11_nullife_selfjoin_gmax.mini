@@ -1,0 +1,15 @@
+; complex TRAP: events (no key) self-joined on NULLIFE(ev_kind) then GMAX ev_val per row; '' becomes NULL and HJOIN drops NULL keys, a GROUP rewrite must filter them (S3); GMAX keeps the first of equal values (1.5 vs 1.50)
+LOAD   vk, events.ev_kind
+LOAD   vv, events.ev_val
+LOAD   vt, events.ev_at
+NULLIFE k, vk
+HJOIN  a, b, k, k
+GATHER vb, vv, b
+GROUP  g, a
+GFIRST f, g
+GATHER pos, a, f
+GMAX   mx, g, vb
+GATHER o1, vk, pos
+GATHER o2, vt, pos
+GATHER o3, vv, pos
+OUT    o1, o2, o3, mx

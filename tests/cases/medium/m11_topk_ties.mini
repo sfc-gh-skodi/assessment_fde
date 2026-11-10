@@ -1,0 +1,13 @@
+; medium TRAP: SORT + SLICE 5 -> TOPK 5 on o_qty DESC with many ties; tied rows must keep input (o_id) order, and a TOPK of a different n or tie-break is wrong
+LOAD   id, orders.o_id
+LOAD   q, orders.o_qty
+LOAD   st, orders.o_status
+LOAD   nt, orders.o_note       ; dead
+SORT   p, q DESC NL
+GATHER sq, q, p
+GATHER si, id, p
+GATHER ss, st, p
+SLICE  a, si, 5
+SLICE  b, sq, 5
+SLICE  c, ss, 5
+OUT    a, b, c

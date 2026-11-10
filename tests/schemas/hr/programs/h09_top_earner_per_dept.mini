@@ -1,0 +1,28 @@
+; complex: top earners of each department (ties kept) as a "count of better rows" self-join on e_dept + GSUM; NULL salaries never win; by dept then id
+LOAD   ei, emps.e_id
+LOAD   ed, emps.e_dept
+LOAD   es, emps.e_salary
+HJOIN  a, b, ed, ed
+GATHER sa, es, a
+GATHER sb, es, b
+GT     hit, sb, sa
+IF     one, hit, 1, 0
+GROUP  g, a
+GFIRST f, g
+GATHER pos, a, f
+GSUM   better, g, one
+EQ     z, better, 0
+GATHER ps, es, pos
+ISNULL nn, ps
+NOT    hv, nn
+AND    keep, z, hv
+IDX    k, keep
+GATHER kp, pos, k
+GATHER o_d, ed, kp
+GATHER o_i, ei, kp
+GATHER o_s, es, kp
+SORT   s, o_d ASC NF, o_i ASC NF
+GATHER r1, o_d, s
+GATHER r2, o_i, s
+GATHER r3, o_s, s
+OUT    r1, r2, r3

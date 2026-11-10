@@ -1,0 +1,14 @@
+; easy: shifts is sorted by its composite key (sh_emp, sh_day), so the SORT is the identity; GE sh_hours, 1 is always TRUE (not_null + check [1,16])
+LOAD   e, shifts.sh_emp
+LOAD   d, shifts.sh_day
+LOAD   h, shifts.sh_hours
+GE     m, h, 1
+IDX    i, m
+GATHER e1, e, i
+GATHER d1, d, i
+GATHER h1, h, i
+SORT   s, e1 ASC NF, d1 ASC NF
+GATHER e2, e1, s
+GATHER d2, d1, s
+GATHER h2, h1, s
+OUT    e2, d2, h2

@@ -1,0 +1,31 @@
+; complex: self-referencing categories (k_parent refs k_id, nullable) -> products count and max price per parent category name, 3 joins, price filter at the end, sorted by parent name
+LOAD   pi, products.p_id
+LOAD   pc, products.p_cat
+LOAD   pp, products.p_price
+LOAD   pn, products.p_name
+LOAD   ki, categories.k_id
+LOAD   kp, categories.k_parent
+LOAD   kn, categories.k_name
+HJOIN  l1, r1, pc, ki
+GATHER x_pp, pp, l1
+GATHER x_pn, pn, l1
+GATHER x_kp, kp, r1
+GATHER x_kn, kn, r1
+HJOIN  l2, r2, x_kp, ki
+GATHER y_pp, x_pp, l2
+GATHER y_kn, x_kn, l2
+GATHER y_par, kn, r2
+GT     m, y_pp, 20.00
+IDX    i, m
+GATHER z_pp, y_pp, i
+GATHER z_par, y_par, i
+GROUP  g, z_par
+GFIRST f, g
+GATHER key, z_par, f
+GCOUNT n, g
+GMAX   mx, g, z_pp
+SORT   s, key ASC NF
+GATHER o1, key, s
+GATHER o2, n, s
+GATHER o3, mx, s
+OUT    o1, o2, o3
