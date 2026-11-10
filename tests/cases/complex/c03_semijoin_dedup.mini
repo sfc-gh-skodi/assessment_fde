@@ -1,0 +1,25 @@
+; complex: orders that have at least one payment above 200.00, de-duplicated with SORT + GROUP/GFIRST
+LOAD    oid, orders.o_id
+LOAD    oa, orders.o_amt
+LOAD    os, orders.o_status
+LOAD    yo, payments.y_order
+LOAD    ya, payments.y_amt
+GT      m, ya, 200.00
+IDX     w, m
+GATHER  yo2, yo, w
+GATHER  ya2, ya, w
+HJOIN   li, ri, oid, yo2
+GATHER  a, oid, li
+GATHER  b, oa, li
+GATHER  c, os, li
+GATHER  d, ya2, ri
+SORT    p, a ASC NF
+GATHER  a1, a, p
+GATHER  b1, b, p
+GATHER  c1, c, p
+GROUP   g, a1
+GFIRST  f, g
+GATHER  a2, a1, f
+GATHER  b2, b1, f
+GATHER  c2, c1, f
+OUT     a2, b2, c2

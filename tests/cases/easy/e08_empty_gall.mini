@@ -1,0 +1,13 @@
+; easy: total and count of a filter that is often empty (GALL keeps one row even then)
+LOAD a, orders.o_amt
+LOAD n, orders.o_note
+LOAD q, orders.o_qty
+IS m, n, 'gift'
+IDX i, m
+GATHER a2, a, i
+GATHER q2, q, i
+GALL g, a2
+GSUM s, g, a2
+GCOUNT c, g
+GMAX x, g, q2
+OUT s, c, x

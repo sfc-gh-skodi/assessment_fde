@@ -1,0 +1,24 @@
+; complex: each 2024 order with the smallest o_amt of its customer (correlated self-join + GMIN), by id
+LOAD    id, orders.o_id
+LOAD    cu, orders.o_cust
+LOAD    am, orders.o_amt
+LOAD    dt, orders.o_date
+YEAR    y, dt
+EQ      m, y, 2024
+IDX     w, m
+GATHER  id1, id, w
+GATHER  cu1, cu, w
+GATHER  am1, am, w
+HJOIN   a, b, cu1, cu1
+GATHER  amb, am1, b
+GROUP   g, a
+GMIN    mn, g, amb
+GFIRST  f, g
+GATHER  row, a, f
+GATHER  oid, id1, row
+GATHER  oam, am1, row
+SORT    s, oid ASC NF
+GATHER  x1, oid, s
+GATHER  x2, oam, s
+GATHER  x3, mn, s
+OUT     x1, x2, x3

@@ -1,0 +1,14 @@
+; easy: unordered output; dead gathers of every column after a filter
+LOAD a, payments.y_id
+LOAD b, payments.y_order
+LOAD c, payments.y_date
+LOAD d, payments.y_amt
+LOAD e, payments.y_method
+GT m, d, 400.00
+IDX i, m
+GATHER a2, a, i
+GATHER b2, b, i
+GATHER c2, c, i
+GATHER d2, d, i
+GATHER e2, e, i
+OUT a2, d2

@@ -1,0 +1,8 @@
+; easy TRAP: l_disc has check [0, 0.5] but is nullable, so GE l_disc, 0 drops NULL rows. Must stay.
+LOAD o, lines.l_order
+LOAD d, lines.l_disc
+GE m, d, 0
+IDX i, m
+GATHER o2, o, i
+GATHER d2, d, i
+OUT o2, d2

@@ -1,0 +1,11 @@
+; easy: a SORT whose result only feeds order-insensitive GALL aggregates is dead work
+LOAD a, orders.o_amt
+LOAD q, orders.o_qty
+SORT p, a DESC NL
+GATHER a2, a, p
+GATHER q2, q, p
+GALL g, a2
+GSUM s, g, a2
+GSUM t, g, q2
+GCOUNT n, g
+OUT s, t, n

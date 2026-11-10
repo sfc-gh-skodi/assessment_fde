@@ -1,0 +1,31 @@
+; complex: the 2 cheapest products of each category (ties by lower id), "count of better rows" self-join
+LOAD    id, products.p_id
+LOAD    cat, products.p_cat
+LOAD    pr, products.p_price
+LOAD    nm, products.p_name
+HJOIN   a, b, cat, cat
+GATHER  pa, pr, a
+GATHER  pb, pr, b
+GATHER  ia, id, a
+GATHER  ib, id, b
+LT      lt1, pb, pa
+EQ      eq1, pb, pa
+LT      lt2, ib, ia
+AND     t1, eq1, lt2
+OR      better, lt1, t1
+IF      one, better, 1, 0
+GROUP   g, a
+GSUM    nb, g, one
+GFIRST  f, g
+GATHER  row, a, f
+LT      keep, nb, 2
+IDX     w, keep
+GATHER  r2, row, w
+GATHER  oid, id, r2
+GATHER  onm, nm, r2
+GATHER  oc, cat, r2
+SORT    s, oc ASC NF, oid ASC NF
+GATHER  x1, oc, s
+GATHER  x2, oid, s
+GATHER  x3, onm, s
+OUT     x1, x2, x3

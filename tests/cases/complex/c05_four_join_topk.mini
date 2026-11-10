@@ -1,0 +1,65 @@
+; complex: the 4 largest card payments of central customers, with a customer/order label;
+; four joins, label built before filters, full SORT then slice
+LOAD    yid, payments.y_id
+LOAD    yo, payments.y_order
+LOAD    ya, payments.y_amt
+LOAD    ym, payments.y_method
+LOAD    oid, orders.o_id
+LOAD    oc, orders.o_cust
+LOAD    ost, orders.o_status
+HJOIN   j1l, j1r, yo, oid
+GATHER  a1, yid, j1l
+GATHER  a2, ya, j1l
+GATHER  a3, ym, j1l
+GATHER  a4, oid, j1r
+GATHER  a5, oc, j1r
+GATHER  a6, ost, j1r
+LOAD    cid, customers.c_id
+LOAD    cn, customers.c_name
+LOAD    cr, customers.c_region
+HJOIN   j2l, j2r, a5, cid
+GATHER  b1, a1, j2l
+GATHER  b2, a2, j2l
+GATHER  b3, a3, j2l
+GATHER  b4, a4, j2l
+GATHER  b6, a6, j2l
+GATHER  b7, cn, j2r
+GATHER  b8, cr, j2r
+LOAD    rc, regions.r_code
+LOAD    rn, regions.r_name
+HJOIN   j3l, j3r, b8, rc
+GATHER  c1, b1, j3l
+GATHER  c2, b2, j3l
+GATHER  c3, b3, j3l
+GATHER  c4, b4, j3l
+GATHER  c6, b6, j3l
+GATHER  c7, b7, j3l
+GATHER  c8, b8, j3l
+GATHER  c9, rn, j3r
+NVL     l0, c7, '?'
+CAT     l1, l0, ' / '
+CAT     l2, l1, c9
+LEFT    lab, l2, 20
+SORT    p, c2 DESC NL, c1 ASC NF
+GATHER  d1, c1, p
+GATHER  d2, c2, p
+GATHER  d3, c3, p
+GATHER  d4, c4, p
+GATHER  d8, c8, p
+GATHER  dl, lab, p
+UPPER   mu, d3
+IS      e1, mu, 'CARD'
+IS      e2, d8, 'central'
+AND     e, e1, e2
+IDX     w, e
+GATHER  f1, d1, w
+GATHER  f2, d2, w
+GATHER  f4, d4, w
+GATHER  fl, dl, w
+IOTA    k, f1
+SLICE   k, k, 4
+GATHER  g1, f1, k
+GATHER  g2, f2, k
+GATHER  g4, f4, k
+GATHER  gl, fl, k
+OUT     g1, g2, g4, gl

@@ -1,0 +1,10 @@
+; easy: registers are overwritten many times (SSA renaming must get this right)
+LOAD x, orders.o_qty
+LOAD y, orders.o_id
+MUL x, x, 2
+GT m, x, 9
+IDX i, m
+GATHER x, x, i
+GATHER y, y, i
+ADD x, x, 1
+OUT y, x

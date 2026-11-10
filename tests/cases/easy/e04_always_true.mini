@@ -1,0 +1,8 @@
+; easy: l_qty is not_null with check [1,500], so GE l_qty, 1 is always TRUE
+LOAD o, lines.l_order
+LOAD q, lines.l_qty
+GE m, q, 1
+IDX i, m
+GATHER o2, o, i
+GATHER q2, q, i
+OUT o2, q2

@@ -1,0 +1,14 @@
+; medium: full SORT then keep the first 3 -> TOPK 3
+LOAD id, orders.o_id
+LOAD a, orders.o_amt
+LOAD d, orders.o_date
+SORT p, a DESC NL, id ASC NF
+GATHER id2, id, p
+GATHER a2, a, p
+GATHER d2, d, p
+IOTA k, id2
+SLICE k, k, 3
+GATHER id3, id2, k
+GATHER a3, a2, k
+GATHER d3, d2, k
+OUT id3, a3, d3

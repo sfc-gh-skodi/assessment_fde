@@ -1,0 +1,21 @@
+; medium: top 3 lines by price among discounted lines, sort first then filter then slice
+LOAD lo, lines.l_order
+LOAD ln, lines.l_no
+LOAD lpr, lines.l_price
+LOAD ld, lines.l_disc
+SORT p, lpr DESC NL, lo ASC NF, ln ASC NF
+GATHER a, lo, p
+GATHER b, ln, p
+GATHER c, lpr, p
+GATHER d, ld, p
+GT m, d, 0.0
+IDX w, m
+GATHER a2, a, w
+GATHER b2, b, w
+GATHER c2, c, w
+IOTA k, a2
+SLICE k, k, 3
+GATHER a3, a2, k
+GATHER b3, b2, k
+GATHER c3, c2, k
+OUT a3, b3, c3

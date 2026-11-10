@@ -1,0 +1,13 @@
+; easy: the same column loaded twice and the same predicate computed twice
+LOAD a, orders.o_amt
+LOAD a2, orders.o_amt
+LOAD q, orders.o_qty
+GT m1, a, 100.00
+GT m2, a2, 100.00
+GE k, q, 4
+AND m, m1, k
+AND mm, m, m2
+IDX i, mm
+GATHER r, a2, i
+GATHER s, q, i
+OUT r, s

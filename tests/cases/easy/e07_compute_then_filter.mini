@@ -1,0 +1,14 @@
+; easy: an expensive label is built for every order, then most rows are filtered out
+LOAD id, orders.o_id
+LOAD st, orders.o_status
+LOAD nt, orders.o_note
+LOAD q, orders.o_qty
+NVL n1, nt, '-'
+CAT c1, st, ' :: '
+CAT c2, c1, n1
+UPPER lab, c2
+GE m, q, 8
+IDX i, m
+GATHER id2, id, i
+GATHER lab2, lab, i
+OUT id2, lab2

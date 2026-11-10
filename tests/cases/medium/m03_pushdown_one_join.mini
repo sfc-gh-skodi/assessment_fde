@@ -1,0 +1,22 @@
+; medium: join lines to orders, then filter on an orders column at the end
+LOAD lo, lines.l_order
+LOAD ln, lines.l_no
+LOAD lq, lines.l_qty
+LOAD oid, orders.o_id
+LOAD od, orders.o_date
+LOAD os, orders.o_status
+HJOIN li, ri, lo, oid
+GATHER a, lo, li
+GATHER b, ln, li
+GATHER c, lq, li
+GATHER e, od, ri
+GATHER f, os, ri
+YEAR y, e
+EQ m1, y, 2024
+IS m2, f, 'shipped'
+AND m, m1, m2
+IDX w, m
+GATHER a2, a, w
+GATHER b2, b, w
+GATHER c2, c, w
+OUT a2, b2, c2

@@ -1,0 +1,22 @@
+; medium: p_supp is a nullable ref (at most one match): products with a 4+ rated supplier
+LOAD pid, products.p_id
+LOAD ps, products.p_supp
+LOAD pn, products.p_name
+LOAD sid, suppliers.s_id
+LOAD sr, suppliers.s_rating
+LOAD sn, suppliers.s_name
+HJOIN li, ri, ps, sid
+GATHER a, pid, li
+GATHER b, pn, li
+GATHER c, sr, ri
+GATHER d, sn, ri
+GE m, c, 4
+IDX w, m
+GATHER a2, a, w
+GATHER b2, b, w
+GATHER d2, d, w
+SORT o, a2 ASC NF
+GATHER a3, a2, o
+GATHER b3, b2, o
+GATHER d3, d2, o
+OUT a3, b3, d3

@@ -1,0 +1,26 @@
+; medium: payments -> orders lookup (y_order not_null refs o_id), filter on method after the join
+LOAD yid, payments.y_id
+LOAD yo, payments.y_order
+LOAD ya, payments.y_amt
+LOAD ym, payments.y_method
+LOAD oid, orders.o_id
+LOAD os, orders.o_status
+LOAD od, orders.o_date
+HJOIN li, ri, yo, oid
+GATHER a, yid, li
+GATHER b, ya, li
+GATHER c, ym, li
+GATHER d, os, ri
+GATHER e, od, ri
+UPPER cu, c
+IS m, cu, 'CARD'
+IDX w, m
+GATHER a2, a, w
+GATHER b2, b, w
+GATHER d2, d, w
+GATHER e2, e, w
+SORT o, e2 DESC NL, a2 ASC NF
+GATHER a3, a2, o
+GATHER b3, b2, o
+GATHER d3, d2, o
+OUT a3, b3, d3

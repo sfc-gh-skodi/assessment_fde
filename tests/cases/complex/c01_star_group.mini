@@ -1,0 +1,66 @@
+; complex: revenue per category name of 2024 lines whose order is 'closed', star join with filters at the end,
+; every column carried through every join, and a final sort by category name
+LOAD    lo, lines.l_order
+LOAD    ln, lines.l_no
+LOAD    lp, lines.l_prod
+LOAD    lq, lines.l_qty
+LOAD    lpr, lines.l_price
+LOAD    ld, lines.l_disc
+LOAD    oid, orders.o_id
+LOAD    od, orders.o_date
+LOAD    os, orders.o_status
+HJOIN   j1l, j1r, lo, oid
+GATHER  a1, lo, j1l
+GATHER  a2, ln, j1l
+GATHER  a3, lp, j1l
+GATHER  a4, lq, j1l
+GATHER  a5, lpr, j1l
+GATHER  a6, ld, j1l
+GATHER  a7, od, j1r
+GATHER  a8, os, j1r
+LOAD    pid, products.p_id
+LOAD    pcat, products.p_cat
+LOAD    pname, products.p_name
+HJOIN   j2l, j2r, a3, pid
+GATHER  b1, a1, j2l
+GATHER  b2, a2, j2l
+GATHER  b4, a4, j2l
+GATHER  b5, a5, j2l
+GATHER  b6, a6, j2l
+GATHER  b7, a7, j2l
+GATHER  b8, a8, j2l
+GATHER  b9, pcat, j2r
+GATHER  b10, pname, j2r
+LOAD    kid, categories.k_id
+LOAD    kname, categories.k_name
+HJOIN   j3l, j3r, b9, kid
+GATHER  c4, b4, j3l
+GATHER  c5, b5, j3l
+GATHER  c6, b6, j3l
+GATHER  c7, b7, j3l
+GATHER  c8, b8, j3l
+GATHER  c10, b10, j3l
+GATHER  c11, kname, j3r
+SUB     om, 1, c6
+MUL     qp, c4, c5
+MUL     rv, qp, om
+YEAR    y, c7
+EQ      e1, y, 2024
+NULLIFE s1, c8
+RTRIM   s2, s1
+UPPER   s3, s2
+IS      e2, s3, 'CLOSED'
+AND     e, e1, e2
+IDX     w, e
+GATHER  rv2, rv, w
+GATHER  kn2, c11, w
+GROUP   g, kn2
+GSUM    tot, g, rv2
+GCOUNT  cnt, g
+GFIRST  f, g
+GATHER  key, kn2, f
+SORT    o, key ASC NF
+GATHER  k3, key, o
+GATHER  t3, tot, o
+GATHER  n3, cnt, o
+OUT     k3, t3, n3

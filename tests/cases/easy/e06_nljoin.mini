@@ -1,0 +1,9 @@
+; easy: NLJOIN of lines with products is quadratic; HJOIN gives the same result
+LOAD lp, lines.l_prod
+LOAD lo, lines.l_order
+LOAD pid, products.p_id
+LOAD pn, products.p_name
+NLJOIN li, ri, lp, pid
+GATHER a, lo, li
+GATHER b, pn, ri
+OUT a, b

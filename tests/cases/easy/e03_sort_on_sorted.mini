@@ -1,0 +1,9 @@
+; easy: lines is stored sorted by (l_order, l_no): this SORT is the identity
+LOAD o, lines.l_order
+LOAD n, lines.l_no
+LOAD q, lines.l_qty
+SORT p, o ASC NF, n ASC NF
+GATHER o2, o, p
+GATHER n2, n, p
+GATHER q2, q, p
+OUT o2, n2, q2

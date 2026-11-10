@@ -1,0 +1,18 @@
+; medium: revenue per order status, sorted by status; dead loads and a dead sort before GROUP
+LOAD st, orders.o_status
+LOAD a, orders.o_amt
+LOAD q, orders.o_qty
+LOAD n, orders.o_note
+SORT p0, a ASC NL
+GATHER a0, a, p0
+GATHER s0, st, p0
+GROUP g, s0
+GSUM t, g, a0
+GCOUNT c, g
+GFIRST f, g
+GATHER k, s0, f
+SORT p, k ASC NF
+GATHER k2, k, p
+GATHER t2, t, p
+GATHER c2, c, p
+OUT k2, t2, c2

@@ -1,0 +1,19 @@
+; medium: sort everything, then filter; filtering first gives the same ordered rows
+LOAD id, orders.o_id
+LOAD st, orders.o_status
+LOAD dt, orders.o_date
+LOAD a, orders.o_amt
+SORT p, dt ASC NL, id ASC NF
+GATHER id2, id, p
+GATHER st2, st, p
+GATHER dt2, dt, p
+GATHER a2, a, p
+NULLIFE s1, st2
+RTRIM s2, s1
+UPPER s3, s2
+IS m, s3, 'OPEN'
+IDX i, m
+GATHER id3, id2, i
+GATHER dt3, dt2, i
+GATHER a3, a2, i
+OUT id3, dt3, a3

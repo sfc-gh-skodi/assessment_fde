@@ -1,0 +1,32 @@
+; complex: for each order of 2024, how many orders of the same status have a smaller amount (self-join count),
+; label computed for all rows first; output by id
+LOAD    id, orders.o_id
+LOAD    st, orders.o_status
+LOAD    am, orders.o_amt
+LOAD    dt, orders.o_date
+LOAD    nt, orders.o_note
+NVL     n1, nt, ''
+CAT     lab, st, n1
+HJOIN   a, b, st, st
+GATHER  aa, am, a
+GATHER  ab, am, b
+LT      hit, ab, aa
+IF      one, hit, 1, 0
+GROUP   g, a
+GSUM    cnt, g, one
+GFIRST  f, g
+GATHER  row, a, f
+GATHER  rid, id, row
+GATHER  rdt, dt, row
+GATHER  rlab, lab, row
+YEAR    y, rdt
+EQ      m, y, 2024
+IDX     w, m
+GATHER  x1, rid, w
+GATHER  x2, cnt, w
+GATHER  x3, rlab, w
+SORT    s, x1 ASC NF
+GATHER  o1, x1, s
+GATHER  o2, x2, s
+GATHER  o3, x3, s
+OUT     o1, o2, o3

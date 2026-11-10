@@ -1,0 +1,9 @@
+; easy TRAP: DIV runs only after the c_credit filter; hoisting DIV above it could divide by zero / NULL
+LOAD c, customers.c_credit
+LOAD id, customers.c_id
+GT m, c, 0
+IDX i, m
+GATHER c2, c, i
+GATHER id2, id, i
+DIV r, 1000, c2
+OUT id2, r

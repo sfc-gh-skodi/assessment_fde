@@ -1,0 +1,10 @@
+; easy: dead loads and a dead computation; only o_id of big orders is output
+LOAD a, orders.o_id
+LOAD b, orders.o_amt
+LOAD c, orders.o_note
+LOAD d, orders.o_cust
+UPPER u, c
+GT m, b, 500.00
+IDX i, m
+GATHER x, a, i
+OUT x

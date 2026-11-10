@@ -1,0 +1,21 @@
+; medium: exactly-one lookup join (l_prod not_null refs products key), label built before the filter
+LOAD lo, lines.l_order
+LOAD lp, lines.l_prod
+LOAD lq, lines.l_qty
+LOAD pid, products.p_id
+LOAD pn, products.p_name
+LOAD pp, products.p_price
+HJOIN li, ri, lp, pid
+GATHER a, lo, li
+GATHER q, lq, li
+GATHER n, pn, ri
+GATHER pr, pp, ri
+CAT l1, n, ' @ '
+LEFT lab, l1, 12
+MUL v, q, pr
+GT m, q, 20
+IDX w, m
+GATHER a2, a, w
+GATHER lab2, lab, w
+GATHER v2, v, w
+OUT a2, lab2, v2

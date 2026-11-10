@@ -1,0 +1,18 @@
+; medium TRAP: customers has no key, so orders x customers may fan out; filter on c_region at the end
+LOAD oid, orders.o_id
+LOAD oc, orders.o_cust
+LOAD oa, orders.o_amt
+LOAD cid, customers.c_id
+LOAD cr, customers.c_region
+LOAD cn, customers.c_name
+HJOIN li, ri, oc, cid
+GATHER a, oid, li
+GATHER b, oa, li
+GATHER c, cr, ri
+GATHER d, cn, ri
+IS m, c, 'south'
+IDX w, m
+GATHER a2, a, w
+GATHER b2, b, w
+GATHER d2, d, w
+OUT a2, b2, d2

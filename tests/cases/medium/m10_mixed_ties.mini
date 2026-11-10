@@ -1,0 +1,13 @@
+; medium: sort with many ties (o_qty), stable order matters; filter after sort
+LOAD id, orders.o_id
+LOAD q, orders.o_qty
+LOAD a, orders.o_amt
+SORT p, q DESC NL
+GATHER id2, id, p
+GATHER q2, q, p
+GATHER a2, a, p
+GT m, a2, 100.00
+IDX w, m
+GATHER id3, id2, w
+GATHER q3, q2, w
+OUT id3, q3
