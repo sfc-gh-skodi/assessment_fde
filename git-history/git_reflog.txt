@@ -1,3 +1,4 @@
+92fdf0f HEAD@{2026-11-10 17:12:53 -0500}: commit: Refresh session record (auto-exported by the Stop hook)
 09754ed HEAD@{2026-11-10 17:11:44 -0500}: commit: Capture both sessions per-session and auto-export via a Cortex Code hook
 81d10bd HEAD@{2026-11-10 16:59:47 -0500}: commit: Add session record: mental model, raw sessions, prompts, git history
 d899e82 HEAD@{2026-11-10 16:45:38 -0500}: commit: Rewrite build plan (v2) from notes and prototype results
