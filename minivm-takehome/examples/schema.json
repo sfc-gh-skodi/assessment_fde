@@ -1,0 +1,1258 @@
+{
+  "regions": {
+    "columns": [
+      {
+        "name": "r_code",
+        "type": "STR"
+      },
+      {
+        "name": "r_name",
+        "type": "STR"
+      }
+    ],
+    "stats": {
+      "rows": 4,
+      "columns": {
+        "r_code": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": "east",
+          "max": "west",
+          "avg_bytes": 4.5,
+          "common": []
+        },
+        "r_name": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": "East Coast",
+          "max": "West Coast",
+          "avg_bytes": 9.0,
+          "common": []
+        }
+      }
+    }
+  },
+  "customers": {
+    "columns": [
+      {
+        "name": "c_id",
+        "type": "INT"
+      },
+      {
+        "name": "c_name",
+        "type": "STR"
+      },
+      {
+        "name": "c_region",
+        "type": "STR"
+      },
+      {
+        "name": "c_since",
+        "type": "DATE"
+      },
+      {
+        "name": "c_credit",
+        "type": "NUM"
+      }
+    ],
+    "stats": {
+      "rows": 12,
+      "columns": {
+        "c_id": {
+          "nulls": 0,
+          "distinct": 12,
+          "min": 1,
+          "max": 12,
+          "common": [],
+          "histogram": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            12
+          ]
+        },
+        "c_name": {
+          "nulls": 0,
+          "distinct": 12,
+          "min": "Ann",
+          "max": "Lu",
+          "avg_bytes": 2.83,
+          "common": []
+        },
+        "c_region": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": "central",
+          "max": "west",
+          "avg_bytes": 5.25,
+          "common": [
+            [
+              "south",
+              4
+            ],
+            [
+              "central",
+              3
+            ],
+            [
+              "west",
+              3
+            ],
+            [
+              "north",
+              2
+            ]
+          ]
+        },
+        "c_since": {
+          "nulls": 0,
+          "distinct": 12,
+          "min": "2015-02-09",
+          "max": "2023-06-22",
+          "common": [],
+          "histogram": [
+            "2015-02-09",
+            "2015-05-12",
+            "2016-02-10",
+            "2016-05-21",
+            "2016-07-14",
+            "2017-09-09",
+            "2018-06-02",
+            "2018-07-29",
+            "2020-10-11",
+            "2023-02-25",
+            "2023-06-22"
+          ]
+        },
+        "c_credit": {
+          "nulls": 2,
+          "distinct": 10,
+          "min": "1195.29",
+          "max": "4742.11",
+          "common": [],
+          "histogram": [
+            "1195.29",
+            "1195.29",
+            "1634.57",
+            "2909.56",
+            "2958.71",
+            "3061.22",
+            "3199.55",
+            "3255.39",
+            "3373.58",
+            "3597.99",
+            "4742.11"
+          ]
+        }
+      }
+    }
+  },
+  "orders": {
+    "columns": [
+      {
+        "name": "o_id",
+        "type": "INT"
+      },
+      {
+        "name": "o_cust",
+        "type": "INT"
+      },
+      {
+        "name": "o_date",
+        "type": "DATE"
+      },
+      {
+        "name": "o_amt",
+        "type": "NUM"
+      },
+      {
+        "name": "o_qty",
+        "type": "INT"
+      },
+      {
+        "name": "o_status",
+        "type": "STR"
+      },
+      {
+        "name": "o_note",
+        "type": "STR"
+      }
+    ],
+    "key": [
+      "o_id"
+    ],
+    "stats": {
+      "rows": 30,
+      "columns": {
+        "o_id": {
+          "nulls": 0,
+          "distinct": 30,
+          "min": 1,
+          "max": 30,
+          "common": [],
+          "histogram": [
+            1,
+            3,
+            6,
+            9,
+            12,
+            15,
+            18,
+            21,
+            24,
+            27,
+            30
+          ]
+        },
+        "o_cust": {
+          "nulls": 0,
+          "distinct": 11,
+          "min": 1,
+          "max": 12,
+          "common": [
+            [
+              9,
+              5
+            ],
+            [
+              5,
+              4
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              10,
+              4
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              2
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          "histogram": [
+            1,
+            1,
+            3,
+            5,
+            5,
+            7,
+            8,
+            9,
+            9,
+            10,
+            12
+          ]
+        },
+        "o_date": {
+          "nulls": 0,
+          "distinct": 30,
+          "min": "2023-01-02",
+          "max": "2024-12-26",
+          "common": [],
+          "histogram": [
+            "2023-01-02",
+            "2023-01-15",
+            "2023-02-18",
+            "2023-04-15",
+            "2023-07-08",
+            "2023-10-29",
+            "2024-01-21",
+            "2024-04-03",
+            "2024-04-26",
+            "2024-07-05",
+            "2024-12-26"
+          ]
+        },
+        "o_amt": {
+          "nulls": 0,
+          "distinct": 30,
+          "min": "25.67",
+          "max": "892.43",
+          "common": [],
+          "histogram": [
+            "25.67",
+            "91.31",
+            "129.72",
+            "296.80",
+            "340.19",
+            "397.91",
+            "442.49",
+            "482.13",
+            "653.67",
+            "722.30",
+            "892.43"
+          ]
+        },
+        "o_qty": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": 1,
+          "max": 9,
+          "common": [
+            [
+              4,
+              7
+            ],
+            [
+              6,
+              6
+            ],
+            [
+              8,
+              4
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              9,
+              3
+            ]
+          ],
+          "histogram": [
+            1,
+            1,
+            3,
+            4,
+            4,
+            5,
+            6,
+            6,
+            8,
+            8,
+            9
+          ]
+        },
+        "o_status": {
+          "nulls": 0,
+          "distinct": 3,
+          "min": "closed",
+          "max": "shipped",
+          "avg_bytes": 5.9,
+          "common": [
+            [
+              "closed",
+              12
+            ],
+            [
+              "shipped",
+              11
+            ],
+            [
+              "open",
+              7
+            ]
+          ]
+        },
+        "o_note": {
+          "nulls": 24,
+          "distinct": 3,
+          "min": "fragile",
+          "max": "rush",
+          "avg_bytes": 4.5,
+          "common": [
+            [
+              "rush",
+              3
+            ],
+            [
+              "gift",
+              2
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "categories": {
+    "columns": [
+      {
+        "name": "k_id",
+        "type": "INT"
+      },
+      {
+        "name": "k_name",
+        "type": "STR"
+      },
+      {
+        "name": "k_parent",
+        "type": "INT"
+      }
+    ],
+    "key": [
+      "k_id"
+    ],
+    "not_null": [
+      "k_name"
+    ],
+    "refs": {
+      "k_parent": "categories.k_id"
+    },
+    "stats": {
+      "rows": 4,
+      "columns": {
+        "k_id": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": 1,
+          "max": 4,
+          "common": [],
+          "histogram": [
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            3,
+            3,
+            3,
+            4
+          ]
+        },
+        "k_name": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": "Garden",
+          "max": "Toys",
+          "avg_bytes": 5.5,
+          "common": []
+        },
+        "k_parent": {
+          "nulls": 3,
+          "distinct": 1,
+          "min": 3,
+          "max": 3,
+          "common": [],
+          "histogram": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        }
+      }
+    }
+  },
+  "suppliers": {
+    "columns": [
+      {
+        "name": "s_id",
+        "type": "INT"
+      },
+      {
+        "name": "s_name",
+        "type": "STR"
+      },
+      {
+        "name": "s_region",
+        "type": "STR"
+      },
+      {
+        "name": "s_rating",
+        "type": "INT"
+      }
+    ],
+    "key": [
+      "s_id"
+    ],
+    "check": {
+      "s_rating": [
+        1,
+        5
+      ]
+    },
+    "stats": {
+      "rows": 3,
+      "columns": {
+        "s_id": {
+          "nulls": 0,
+          "distinct": 3,
+          "min": 10,
+          "max": 30,
+          "common": [],
+          "histogram": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            20,
+            20,
+            20,
+            20,
+            20,
+            30
+          ]
+        },
+        "s_name": {
+          "nulls": 0,
+          "distinct": 3,
+          "min": "Globex 2",
+          "max": "Umbrella 3",
+          "avg_bytes": 9.33,
+          "common": []
+        },
+        "s_region": {
+          "nulls": 0,
+          "distinct": 3,
+          "min": "central",
+          "max": "south",
+          "avg_bytes": 5.33,
+          "common": []
+        },
+        "s_rating": {
+          "nulls": 0,
+          "distinct": 3,
+          "min": 2,
+          "max": 4,
+          "common": [],
+          "histogram": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            3,
+            3,
+            3,
+            3,
+            3,
+            4
+          ]
+        }
+      }
+    }
+  },
+  "products": {
+    "columns": [
+      {
+        "name": "p_id",
+        "type": "INT"
+      },
+      {
+        "name": "p_name",
+        "type": "STR"
+      },
+      {
+        "name": "p_cat",
+        "type": "INT"
+      },
+      {
+        "name": "p_supp",
+        "type": "INT"
+      },
+      {
+        "name": "p_price",
+        "type": "NUM"
+      },
+      {
+        "name": "p_added",
+        "type": "DATE"
+      }
+    ],
+    "key": [
+      "p_id"
+    ],
+    "not_null": [
+      "p_cat",
+      "p_price"
+    ],
+    "refs": {
+      "p_cat": "categories.k_id",
+      "p_supp": "suppliers.s_id"
+    },
+    "check": {
+      "p_price": [
+        "0.01",
+        "9999.99"
+      ]
+    },
+    "stats": {
+      "rows": 8,
+      "columns": {
+        "p_id": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": 1001,
+          "max": 1008,
+          "common": [],
+          "histogram": [
+            1001,
+            1001,
+            1002,
+            1003,
+            1003,
+            1004,
+            1005,
+            1005,
+            1006,
+            1007,
+            1008
+          ]
+        },
+        "p_name": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": "Kettle 4",
+          "max": "Towel 7",
+          "avg_bytes": 6.75,
+          "common": []
+        },
+        "p_cat": {
+          "nulls": 0,
+          "distinct": 2,
+          "min": 1,
+          "max": 2,
+          "common": [
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "histogram": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2
+          ]
+        },
+        "p_supp": {
+          "nulls": 0,
+          "distinct": 2,
+          "min": 10,
+          "max": 30,
+          "common": [
+            [
+              10,
+              5
+            ],
+            [
+              30,
+              3
+            ]
+          ],
+          "histogram": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            30,
+            30,
+            30
+          ]
+        },
+        "p_price": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": "52.07",
+          "max": "2708.00",
+          "common": [],
+          "histogram": [
+            "52.07",
+            "52.07",
+            "82.58",
+            "97.41",
+            "97.41",
+            "99.81",
+            "181.79",
+            "181.79",
+            "453.25",
+            "906.20",
+            "2708.00"
+          ]
+        },
+        "p_added": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": "2015-06-29",
+          "max": "2020-08-30",
+          "common": [],
+          "histogram": [
+            "2015-06-29",
+            "2015-06-29",
+            "2015-11-03",
+            "2017-12-24",
+            "2017-12-24",
+            "2018-12-06",
+            "2019-05-25",
+            "2019-05-25",
+            "2020-03-26",
+            "2020-05-10",
+            "2020-08-30"
+          ]
+        }
+      }
+    }
+  },
+  "lines": {
+    "columns": [
+      {
+        "name": "l_order",
+        "type": "INT"
+      },
+      {
+        "name": "l_no",
+        "type": "INT"
+      },
+      {
+        "name": "l_prod",
+        "type": "INT"
+      },
+      {
+        "name": "l_qty",
+        "type": "INT"
+      },
+      {
+        "name": "l_price",
+        "type": "NUM"
+      },
+      {
+        "name": "l_disc",
+        "type": "NUM"
+      }
+    ],
+    "key": [
+      "l_order",
+      "l_no"
+    ],
+    "not_null": [
+      "l_prod",
+      "l_qty"
+    ],
+    "refs": {
+      "l_order": "orders.o_id",
+      "l_prod": "products.p_id"
+    },
+    "check": {
+      "l_no": [
+        1,
+        50
+      ],
+      "l_qty": [
+        1,
+        500
+      ],
+      "l_disc": [
+        "0",
+        "0.5"
+      ]
+    },
+    "sorted": [
+      "l_order",
+      "l_no"
+    ],
+    "stats": {
+      "rows": 86,
+      "columns": {
+        "l_order": {
+          "nulls": 0,
+          "distinct": 28,
+          "min": 1,
+          "max": 30,
+          "common": [
+            [
+              28,
+              8
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              20,
+              7
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              18,
+              5
+            ],
+            [
+              13,
+              4
+            ],
+            [
+              25,
+              4
+            ],
+            [
+              27,
+              4
+            ]
+          ],
+          "histogram": [
+            1,
+            3,
+            6,
+            10,
+            14,
+            17,
+            20,
+            22,
+            26,
+            28,
+            30
+          ]
+        },
+        "l_no": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": 1,
+          "max": 8,
+          "common": [
+            [
+              1,
+              28
+            ],
+            [
+              2,
+              21
+            ],
+            [
+              3,
+              16
+            ],
+            [
+              4,
+              8
+            ],
+            [
+              5,
+              5
+            ],
+            [
+              6,
+              4
+            ],
+            [
+              7,
+              3
+            ]
+          ],
+          "histogram": [
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            3,
+            3,
+            4,
+            5,
+            8
+          ]
+        },
+        "l_prod": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": 1001,
+          "max": 1008,
+          "common": [
+            [
+              1001,
+              25
+            ],
+            [
+              1002,
+              18
+            ],
+            [
+              1003,
+              10
+            ],
+            [
+              1006,
+              10
+            ],
+            [
+              1005,
+              9
+            ],
+            [
+              1004,
+              6
+            ],
+            [
+              1007,
+              5
+            ],
+            [
+              1008,
+              3
+            ]
+          ],
+          "histogram": [
+            1001,
+            1001,
+            1001,
+            1002,
+            1002,
+            1002,
+            1003,
+            1005,
+            1006,
+            1006,
+            1008
+          ]
+        },
+        "l_qty": {
+          "nulls": 0,
+          "distinct": 8,
+          "min": 1,
+          "max": 266,
+          "common": [
+            [
+              5,
+              19
+            ],
+            [
+              1,
+              15
+            ],
+            [
+              2,
+              15
+            ],
+            [
+              6,
+              14
+            ],
+            [
+              4,
+              13
+            ],
+            [
+              3,
+              8
+            ]
+          ],
+          "histogram": [
+            1,
+            1,
+            2,
+            2,
+            3,
+            4,
+            5,
+            5,
+            5,
+            6,
+            266
+          ]
+        },
+        "l_price": {
+          "nulls": 0,
+          "distinct": 23,
+          "min": "36.45",
+          "max": "2951.72",
+          "common": [
+            [
+              "52.07",
+              20
+            ],
+            [
+              "2708.00",
+              12
+            ],
+            [
+              "97.41",
+              10
+            ],
+            [
+              "82.58",
+              9
+            ],
+            [
+              "906.20",
+              7
+            ],
+            [
+              "181.79",
+              5
+            ],
+            [
+              "99.81",
+              4
+            ],
+            [
+              "453.25",
+              3
+            ]
+          ],
+          "histogram": [
+            "36.45",
+            "52.07",
+            "52.07",
+            "82.58",
+            "84.84",
+            "97.41",
+            "181.79",
+            "824.64",
+            "2193.48",
+            "2708.00",
+            "2951.72"
+          ]
+        },
+        "l_disc": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": "0",
+          "max": "0.5",
+          "common": [
+            [
+              "0",
+              59
+            ],
+            [
+              "0.25",
+              14
+            ],
+            [
+              "0.10",
+              8
+            ],
+            [
+              "0.5",
+              5
+            ]
+          ],
+          "histogram": [
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0.10",
+            "0.25",
+            "0.25",
+            "0.5"
+          ]
+        }
+      }
+    }
+  },
+  "payments": {
+    "columns": [
+      {
+        "name": "y_id",
+        "type": "INT"
+      },
+      {
+        "name": "y_order",
+        "type": "INT"
+      },
+      {
+        "name": "y_date",
+        "type": "DATE"
+      },
+      {
+        "name": "y_amt",
+        "type": "NUM"
+      },
+      {
+        "name": "y_method",
+        "type": "STR"
+      }
+    ],
+    "key": [
+      "y_id"
+    ],
+    "not_null": [
+      "y_order",
+      "y_amt"
+    ],
+    "refs": {
+      "y_order": "orders.o_id"
+    },
+    "check": {
+      "y_amt": [
+        "0.01",
+        null
+      ]
+    },
+    "stats": {
+      "rows": 31,
+      "columns": {
+        "y_id": {
+          "nulls": 0,
+          "distinct": 31,
+          "min": 1,
+          "max": 31,
+          "common": [],
+          "histogram": [
+            1,
+            4,
+            7,
+            10,
+            13,
+            16,
+            19,
+            22,
+            25,
+            28,
+            31
+          ]
+        },
+        "y_order": {
+          "nulls": 0,
+          "distinct": 28,
+          "min": 1,
+          "max": 30,
+          "common": [
+            [
+              28,
+              3
+            ],
+            [
+              1,
+              2
+            ]
+          ],
+          "histogram": [
+            1,
+            3,
+            6,
+            9,
+            13,
+            16,
+            19,
+            22,
+            25,
+            28,
+            30
+          ]
+        },
+        "y_date": {
+          "nulls": 0,
+          "distinct": 30,
+          "min": "2023-01-10",
+          "max": "2024-12-31",
+          "common": [
+            [
+              "2024-05-10",
+              2
+            ]
+          ],
+          "histogram": [
+            "2023-01-10",
+            "2023-01-28",
+            "2023-03-11",
+            "2023-04-21",
+            "2023-07-22",
+            "2023-11-20",
+            "2024-02-08",
+            "2024-04-29",
+            "2024-05-10",
+            "2024-07-18",
+            "2024-12-31"
+          ]
+        },
+        "y_amt": {
+          "nulls": 0,
+          "distinct": 31,
+          "min": "24.24",
+          "max": "873.81",
+          "common": [],
+          "histogram": [
+            "24.24",
+            "91.31",
+            "128.92",
+            "268.39",
+            "337.12",
+            "392.58",
+            "398.83",
+            "466.38",
+            "617.91",
+            "721.51",
+            "873.81"
+          ]
+        },
+        "y_method": {
+          "nulls": 0,
+          "distinct": 4,
+          "min": "card",
+          "max": "voucher",
+          "avg_bytes": 5.55,
+          "common": [
+            [
+              "card",
+              10
+            ],
+            [
+              "voucher",
+              8
+            ],
+            [
+              "cash",
+              7
+            ],
+            [
+              "transfer",
+              6
+            ]
+          ]
+        }
+      }
+    }
+  }
+}

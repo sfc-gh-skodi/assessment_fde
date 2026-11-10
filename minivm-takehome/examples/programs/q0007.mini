@@ -1,0 +1,51 @@
+; The 5 orders with the largest amount, among those with o_date in 2023-07, ties by order id.
+; bulk orders report
+load	r1, orders.o_id
+load	r2, orders.o_cust
+load	r3, orders.o_date
+load	r4, orders.o_amt
+load	r5, orders.o_qty
+load	r6, orders.o_status
+load	r7, orders.o_note
+nvl	r8, r7, ''
+nvl	r9, r6, ''
+cat	r10, r8, ' '
+cat	r11, r10, r9
+nullife	r12, r11
+left	r13, r12, 40                  ; sheet column width
+upper	r14, r7                      ; display copy
+dow	r15, r3                        ; weekday split (removed)
+sort	r16, r4 DESC NL, r1 ASC NF
+gather	r17, r1, r16
+gather	r18, r2, r16
+gather	r19, r3, r16
+gather	r20, r4, r16
+gather	r21, r5, r16
+gather	r22, r6, r16
+gather	r23, r7, r16
+gather	r24, r13, r16
+year	r25, r19
+eq	r26, r25, 2023
+month	r27, r19
+eq	r28, r27, 7
+and	r29, r26, r28
+idx	r30, r29
+gather	r31, r17, r30
+gather	r32, r18, r30
+gather	r33, r19, r30
+gather	r34, r20, r30
+gather	r35, r21, r30
+gather	r36, r22, r30
+gather	r37, r23, r30
+gather	r38, r24, r30
+iota	r39, r31
+slice	r39, r39, 5
+gather	r40, r31, r39
+gather	r41, r32, r39
+gather	r42, r33, r39
+gather	r43, r34, r39
+gather	r44, r35, r39
+gather	r45, r36, r39
+gather	r46, r37, r39
+gather	r47, r38, r39
+out	r40, r43, r47

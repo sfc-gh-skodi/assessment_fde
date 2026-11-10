@@ -1,0 +1,123 @@
+; Revenue and line count of Kitchen products sold to central-region customers in 2023.
+; joined in the order of the old star-schema diagram; filters applied at the end (MKT-1883)
+LOAD    t0_l_o, lines.l_order
+LOAD    t1_l_n, lines.l_no
+LOAD    t2_l_p, lines.l_prod
+LOAD    t3_l_q, lines.l_qty
+LOAD    t4_l_p, lines.l_price
+LOAD    t5_l_d, lines.l_disc
+LOAD    t6_o_i, orders.o_id
+LOAD    t7_o_c, orders.o_cust
+LOAD    t8_o_d, orders.o_date
+LOAD    t9_o_s, orders.o_status
+HJOIN   t10_j1_, t11_j1_, t0_l_o, t6_o_i
+GATHER  t12_j1_, t0_l_o, t10_j1_
+GATHER  t13_j1_, t1_l_n, t10_j1_
+GATHER  t14_j1_, t2_l_p, t10_j1_
+GATHER  t15_j1_, t3_l_q, t10_j1_
+GATHER  t16_j1_, t4_l_p, t10_j1_
+GATHER  t17_j1_, t5_l_d, t10_j1_
+GATHER  t18_j1_, t6_o_i, t11_j1_
+GATHER  t19_j1_, t7_o_c, t11_j1_
+GATHER  t20_j1_, t8_o_d, t11_j1_
+GATHER  t21_j1_, t9_o_s, t11_j1_
+LOAD    t22_p_i, products.p_id
+LOAD    t23_p_c, products.p_cat
+LOAD    t24_p_n, products.p_name
+HJOIN   t25_j2_, t26_j2_, t14_j1_, t22_p_i
+GATHER  t27_j2_, t12_j1_, t25_j2_
+GATHER  t28_j2_, t13_j1_, t25_j2_
+GATHER  t29_j2_, t14_j1_, t25_j2_
+GATHER  t30_j2_, t15_j1_, t25_j2_
+GATHER  t31_j2_, t16_j1_, t25_j2_
+GATHER  t32_j2_, t17_j1_, t25_j2_
+GATHER  t33_j2_, t18_j1_, t25_j2_
+GATHER  t34_j2_, t19_j1_, t25_j2_
+GATHER  t35_j2_, t20_j1_, t25_j2_
+GATHER  t36_j2_, t21_j1_, t25_j2_
+GATHER  t37_j2_, t22_p_i, t26_j2_
+GATHER  t38_j2_, t23_p_c, t26_j2_
+GATHER  t39_j2_, t24_p_n, t26_j2_
+LOAD    t40_k_i, categories.k_id
+LOAD    t41_k_n, categories.k_name
+NLJOIN  t42_j3_, t43_j3_, t38_j2_, t40_k_i
+GATHER  t44_j3_, t27_j2_, t42_j3_
+GATHER  t45_j3_, t28_j2_, t42_j3_
+GATHER  t46_j3_, t29_j2_, t42_j3_
+GATHER  t47_j3_, t30_j2_, t42_j3_
+GATHER  t48_j3_, t31_j2_, t42_j3_
+GATHER  t49_j3_, t32_j2_, t42_j3_
+GATHER  t50_j3_, t33_j2_, t42_j3_
+GATHER  t51_j3_, t34_j2_, t42_j3_
+GATHER  t52_j3_, t35_j2_, t42_j3_
+GATHER  t53_j3_, t36_j2_, t42_j3_
+GATHER  t54_j3_, t37_j2_, t42_j3_
+GATHER  t55_j3_, t38_j2_, t42_j3_
+GATHER  t56_j3_, t39_j2_, t42_j3_
+GATHER  t57_j3_, t40_k_i, t43_j3_
+GATHER  t58_j3_, t41_k_n, t43_j3_
+LOAD    t59_c_i, customers.c_id
+LOAD    t60_c_n, customers.c_name
+LOAD    t61_c_r, customers.c_region
+HJOIN   t62_j4_, t63_j4_, t51_j3_, t59_c_i
+GATHER  t64_j4_, t44_j3_, t62_j4_
+GATHER  t65_j4_, t45_j3_, t62_j4_
+GATHER  t66_j4_, t46_j3_, t62_j4_
+GATHER  t67_j4_, t47_j3_, t62_j4_
+GATHER  t68_j4_, t48_j3_, t62_j4_
+GATHER  t69_j4_, t49_j3_, t62_j4_
+GATHER  t70_j4_, t50_j3_, t62_j4_
+GATHER  t71_j4_, t51_j3_, t62_j4_
+GATHER  t72_j4_, t52_j3_, t62_j4_
+GATHER  t73_j4_, t53_j3_, t62_j4_
+GATHER  t74_j4_, t54_j3_, t62_j4_
+GATHER  t75_j4_, t55_j3_, t62_j4_
+GATHER  t76_j4_, t56_j3_, t62_j4_
+GATHER  t77_j4_, t57_j3_, t62_j4_
+GATHER  t78_j4_, t58_j3_, t62_j4_
+GATHER  t79_j4_, t59_c_i, t63_j4_
+GATHER  t80_j4_, t60_c_n, t63_j4_
+GATHER  t81_j4_, t61_c_r, t63_j4_
+UPPER   t82_dea, t73_j4_
+SORT    t83_au, t72_j4_ DESC NL, t64_j4_ ASC NF ; audit trail order
+GATHER  t84_z_l, t64_j4_, t83_au
+GATHER  t85_z_l, t65_j4_, t83_au
+GATHER  t86_z_l, t66_j4_, t83_au
+GATHER  t87_z_l, t67_j4_, t83_au
+GATHER  t88_z_l, t68_j4_, t83_au
+GATHER  t89_z_l, t69_j4_, t83_au
+GATHER  t90_z_o, t70_j4_, t83_au
+GATHER  t91_z_o, t71_j4_, t83_au
+GATHER  t92_z_o, t72_j4_, t83_au
+GATHER  t93_z_o, t73_j4_, t83_au
+GATHER  t94_z_p, t74_j4_, t83_au
+GATHER  t95_z_p, t75_j4_, t83_au
+GATHER  t96_z_p, t76_j4_, t83_au
+GATHER  t97_z_k, t77_j4_, t83_au
+GATHER  t98_z_k, t78_j4_, t83_au
+GATHER  t99_z_c, t79_j4_, t83_au
+GATHER  t100_z_c, t80_j4_, t83_au
+GATHER  t101_z_c, t81_j4_, t83_au
+NULLIFE t102_z_f, t101_z_c
+RTRIM   t103_z_f, t102_z_f
+UPPER   t104_z_f, t103_z_f
+IS      t105_z_f, t104_z_f, 'CENTRAL'
+YEAR    t106_z_f, t92_z_o
+EQ      t107_z_f, t106_z_f, 2023
+AND     t108_z_f, t105_z_f, t107_z_f
+NULLIFE t109_z_f, t98_z_k
+RTRIM   t110_z_f, t109_z_f
+UPPER   t111_z_f, t110_z_f
+IS      t112_z_f, t111_z_f, 'KITCHEN'
+AND     t113_z_f, t108_z_f, t112_z_f
+IDX     t114_w_w, t113_z_f
+GATHER  t115_w_l, t87_z_l, t114_w_w
+GATHER  t116_w_l, t88_z_l, t114_w_w
+GATHER  t117_w_l, t89_z_l, t114_w_w
+SUB     t118_rv_, 1, t117_w_l
+MUL     t119_rv_, t115_w_l, t116_w_l
+MUL     t120_rv, t119_rv_, t118_rv_
+GALL    t121_g, t120_rv
+GSUM    t122_tot, t121_g, t120_rv
+GCOUNT  t123_n, t121_g
+OUT     t122_tot, t123_n

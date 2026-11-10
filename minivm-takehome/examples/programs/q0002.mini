@@ -1,0 +1,42 @@
+; For each discounted line of an order with o_date in 2023 and o_amt above 300.00: how many discounted lines of the same product sold fewer units.
+load t0_l_o, lines.l_order
+load t1_l_n, lines.l_no
+load t2_l_p, lines.l_prod
+load t3_l_q, lines.l_qty
+load t4_l_d, lines.l_disc
+load t5_l_d, lines.l_disc          ; discount comparison, dropped from the sheet in 2021
+load t6_o_i, orders.o_id
+load t7_o_d, orders.o_date
+load t8_o_a, orders.o_amt
+gt t9_pf, t4_l_d, 0.0
+idx t10_pw, t9_pf
+gather t0_l_o, t0_l_o, t10_pw
+gather t1_l_n, t1_l_n, t10_pw
+gather t2_l_p, t2_l_p, t10_pw
+gather t3_l_q, t3_l_q, t10_pw
+hjoin t11_a, t12_b, t2_l_p, t2_l_p ; every pair with the same key (a row pairs with itself)
+gather t13_va, t3_l_q, t11_a
+gather t14_vb, t3_l_q, t12_b
+lt t15_hit, t14_vb, t13_va
+if t16_one, t15_hit, 1, 0
+group t17_g, t11_a
+gsum t18_cnt, t17_g, t16_one
+gfirst t19_f, t17_g
+gather t20_pos, t11_a, t19_f
+year t21_fa_, t7_o_d
+eq t22_fa, t21_fa_, 2023
+gt t23_fb, t8_o_a, 300.00
+and t19_f, t22_fa, t23_fb
+idx t24_ow, t19_f
+gather t25_moi, t6_o_i, t24_ow
+gather t26_lo_, t0_l_o, t20_pos
+gather t27_ln_, t1_l_n, t20_pos
+hjoin t28_c, t29_d, t26_lo_, t25_moi
+gather t30_r1, t26_lo_, t28_c
+gather t31_r2, t27_ln_, t28_c
+gather t32_r3, t18_cnt, t28_c
+sort t33_s, t30_r1 ASC NF, t31_r2 ASC NF
+gather t34_o1, t30_r1, t33_s
+gather t35_o2, t31_r2, t33_s
+gather t36_o3, t32_r3, t33_s
+out t34_o1, t35_o2, t36_o3

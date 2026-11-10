@@ -1,0 +1,35 @@
+; The 4 orders with the latest order id of each status (ignoring case and trailing blanks) (ties by lower id), by order id.
+; top-n per group, ported from the old SQL (count of better rows) (WH-1307)
+; runs every night before the warehouse sync
+load    r1, orders.o_id
+load    r2, orders.o_cust
+load    r3, orders.o_status
+nullife r4, r3
+rtrim   r5, r4
+upper   r6, r5
+hjoin   r7, r8, r6, r6             ; every pair of orders in the same group
+gather  r9, r1, r7
+gather  r10, r1, r8
+gather  r11, r1, r7
+gather  r12, r1, r8
+gt      r13, r10, r9
+eq      r14, r10, r9
+lt      r15, r12, r11
+and     r16, r14, r15              ; equal value: lower id wins
+or      r17, r13, r16
+if      r18, r17, 1, 0
+group   r19, r7
+gsum    r20, r19, r18
+gfirst  r21, r19
+gather  r22, r7, r21
+lt      r23, r20, 4
+idx     r24, r23
+gather  r25, r22, r24
+gather  r26, r1, r25
+gather  r27, r2, r25
+gather  r28, r3, r25
+sort    r29, r26 ASC NF
+gather  r30, r26, r29
+gather  r31, r27, r29
+gather  r32, r28, r29
+out     r30, r32, r30

@@ -1,0 +1,32 @@
+; Order count, total quantity per order status (ignoring case and trailing blanks), for orders with o_qty at least 5; biggest first, then by name (first 10 characters).
+LOAD    o_id, orders.o_id
+LOAD    o_cust, orders.o_cust
+LOAD    o_date, orders.o_date
+LOAD    o_amt, orders.o_amt
+LOAD    o_qty, orders.o_qty
+LOAD    o_status, orders.o_status
+LOAD    o_note, orders.o_note
+GE      f, o_qty, 5
+IDX     w_w, f
+GATHER  w_o_id, o_id, w_w
+GATHER  w_o_cust, o_cust, w_w
+GATHER  w_o_date, o_date, w_w
+GATHER  w_o_amt, o_amt, w_w
+GATHER  w_o_qty, o_qty, w_w
+GATHER  w_o_status, o_status, w_w
+GATHER  w_o_note, o_note, w_w
+NULLIFE xk, w_o_status
+RTRIM   k_t, xk
+UPPER   k, k_t
+GROUP   g, k
+GMIN    rep, g, xk                 ; one spelling per group
+GCOUNT  a0, g
+GSUM    a1, g, w_o_qty
+LEFT    sk_l, rep, 10
+RTRIM   sk_t, sk_l
+UPPER   sk, sk_t
+SORT    q, a0 DESC NL, sk ASC NF
+GATHER  o_rep, rep, q
+GATHER  o_a0, a0, q
+GATHER  o_a1, a1, q
+OUT     o_rep, o_a0, o_a1

@@ -1,0 +1,91 @@
+; Lines of orders with o_date in 2024 and o_amt above 750.00: order, line number and l_prod and a product-and-category label (40 wide), by order and line number.
+; line export for the warehouse (FIN-876)
+LOAD r1, lines.l_order
+LOAD r2, lines.l_no
+LOAD r3, lines.l_prod
+LOAD r4, lines.l_qty
+LOAD r5, lines.l_price
+LOAD r6, lines.l_disc
+SORT r7, r1 ASC NF, r2 ASC NF      ; keep the line order stable for the export
+GATHER r8, r1, r7
+GATHER r9, r2, r7
+GATHER r10, r3, r7
+GATHER r11, r4, r7
+GATHER r12, r5, r7
+GATHER r13, r6, r7
+LOAD r14, products.p_id
+LOAD r15, products.p_name
+LOAD r16, products.p_cat
+HJOIN r17, r18, r10, r14
+GATHER r19, r8, r17
+GATHER r20, r9, r17
+GATHER r21, r10, r17
+GATHER r22, r11, r17
+GATHER r23, r12, r17
+GATHER r24, r13, r17
+GATHER r25, r14, r18
+GATHER r26, r15, r18
+GATHER r27, r16, r18
+LOAD r28, categories.k_id
+LOAD r29, categories.k_name
+HJOIN r30, r31, r27, r28
+GATHER r32, r19, r30
+GATHER r33, r20, r30
+GATHER r34, r21, r30
+GATHER r35, r22, r30
+GATHER r36, r23, r30
+GATHER r37, r24, r30
+GATHER r38, r25, r30
+GATHER r39, r26, r30
+GATHER r40, r27, r30
+GATHER r41, r28, r31
+GATHER r42, r29, r31
+NVL r43, r39, ''
+NVL r44, r42, ''
+CAT r45, r43, ' / '
+CAT r46, r45, r44
+NULLIFE r47, r46
+LEFT r48, r47, 40                  ; sheet column width
+LOAD r49, orders.o_id
+LOAD r50, orders.o_date
+LOAD r51, orders.o_amt
+LOAD r52, orders.o_status
+YEAR r53, r50
+EQ r54, r53, 2024
+GT r55, r51, 750.00
+AND r56, r54, r55
+IDX r57, r56
+GATHER r58, r49, r57
+GATHER r59, r50, r57
+HJOIN r60, r61, r32, r58
+GATHER r62, r32, r60
+GATHER r63, r33, r60
+GATHER r64, r34, r60
+GATHER r65, r35, r60
+GATHER r66, r36, r60
+GATHER r67, r37, r60
+GATHER r68, r38, r60
+GATHER r69, r39, r60
+GATHER r70, r40, r60
+GATHER r71, r41, r60
+GATHER r72, r42, r60
+GATHER r73, r48, r60
+GATHER r74, r58, r61
+GATHER r75, r59, r61
+GE r76, r65, 1                     ; sanity check from the old loader
+IDX r77, r76
+GATHER r78, r62, r77
+GATHER r79, r63, r77
+GATHER r80, r64, r77
+GATHER r81, r65, r77
+GATHER r82, r66, r77
+GATHER r83, r67, r77
+GATHER r84, r68, r77
+GATHER r85, r69, r77
+GATHER r86, r70, r77
+GATHER r87, r71, r77
+GATHER r88, r72, r77
+GATHER r89, r73, r77
+GATHER r90, r74, r77
+GATHER r91, r75, r77
+OUT r78, r79, r80, r89

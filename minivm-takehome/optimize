@@ -1,0 +1,3 @@
+#!/bin/sh
+# ./optimize program.mini schema.json  ->  an equivalent MiniVM program
+cat "$1"

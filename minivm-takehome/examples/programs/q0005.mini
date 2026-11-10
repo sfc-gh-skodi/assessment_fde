@@ -1,0 +1,82 @@
+; Revenue per category for orders with at least one card payment, by category id.
+; finance wants it per category id (OPS-792)
+; ported from the old reporting job, kept as close to the original as possible
+LOAD r1, lines.l_order
+LOAD r2, lines.l_no
+LOAD r3, lines.l_prod
+LOAD r4, lines.l_qty
+LOAD r5, lines.l_price
+LOAD r6, lines.l_disc
+LOAD r7, payments.y_order
+LOAD r8, payments.y_method
+LOAD r9, payments.y_amt
+NULLIFE r10, r8
+RTRIM r11, r10
+UPPER r12, r11
+IS r13, r12, 'CARD'
+IDX r14, r13
+GATHER r15, r7, r14
+GATHER r16, r8, r14
+GATHER r17, r9, r14
+HJOIN r18, r19, r1, r15
+GATHER r20, r1, r18
+GATHER r21, r2, r18
+GATHER r22, r3, r18
+GATHER r23, r4, r18
+GATHER r24, r5, r18
+GATHER r25, r6, r18
+GATHER r26, r15, r19
+GATHER r27, r16, r19
+GATHER r28, r17, r19               ; payments joined straight onto lines, de-duplicated below
+SORT r29, r20 ASC NF, r21 ASC NF   ; line order for the de-dup
+GATHER r30, r20, r29
+GATHER r31, r21, r29
+GATHER r32, r22, r29
+GATHER r33, r23, r29
+GATHER r34, r24, r29
+GATHER r35, r25, r29
+GATHER r36, r26, r29
+GATHER r37, r27, r29
+GATHER r38, r28, r29
+GROUP r39, r30, r31                ; one row per line even when paid several times
+GFIRST r40, r39
+GATHER r41, r30, r40
+GATHER r42, r31, r40
+GATHER r43, r32, r40
+GATHER r44, r33, r40
+GATHER r45, r34, r40
+GATHER r46, r35, r40
+GATHER r47, r36, r40
+GATHER r48, r37, r40
+GATHER r49, r38, r40
+LOAD r50, products.p_id
+LOAD r51, products.p_cat
+NLJOIN r52, r53, r43, r50
+GATHER r54, r41, r52
+GATHER r55, r42, r52
+GATHER r56, r43, r52
+GATHER r57, r44, r52
+GATHER r58, r45, r52
+GATHER r59, r46, r52
+GATHER r60, r47, r52
+GATHER r61, r48, r52
+GATHER r62, r49, r52
+GATHER r63, r50, r53
+GATHER r64, r51, r53
+SUB r65, 1, r59
+MUL r66, r57, r58
+MUL r67, r66, r65
+LOAD r68, categories.k_id
+LOAD r69, categories.k_name
+GROUP r70, r64
+GFIRST r71, r70
+GATHER r72, r64, r71
+GSUM r73, r70, r67
+NLJOIN r74, r75, r72, r68
+GATHER r76, r72, r74
+GATHER r77, r69, r75
+GATHER r78, r73, r74
+SORT r79, r76 ASC NF
+GATHER r80, r77, r79
+GATHER r81, r78, r79
+OUT r80, r81

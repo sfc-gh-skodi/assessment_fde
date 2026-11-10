@@ -1,0 +1,36 @@
+; Each order with its status (ignoring case and trailing blanks)'s largest o_qty (among orders with o_date at least #2023-01-01#), by id.
+; correlated lookup ported from the old SQL (one row per group member)
+LOAD    r1, orders.o_id
+LOAD    r2, orders.o_status
+LOAD    r3, orders.o_qty
+LOAD    r4, orders.o_amt
+LOAD    r5, orders.o_date
+GE      r6, r5, #2023-01-01#
+IDX     r7, r6
+GATHER  r8, r1, r7
+GATHER  r9, r2, r7
+GATHER  r10, r3, r7
+GATHER  r11, r4, r7
+GATHER  r12, r5, r7
+NULLIFE r13, r9
+RTRIM   r14, r13
+UPPER   r15, r14
+HJOIN   r16, r17, r15, r15         ; each row against every row of its group
+GATHER  r18, r10, r17
+GROUP   r19, r16
+GMAX    r20, r19, r18
+GFIRST  r21, r19
+GATHER  r22, r16, r21
+GATHER  r23, r8, r22
+GATHER  r24, r9, r22
+GATHER  r25, r10, r22
+GATHER  r26, r11, r22
+GATHER  r27, r12, r22
+IOTA    r28, r20
+GATHER  r29, r20, r28
+SORT    r30, r23 ASC NF
+GATHER  r31, r23, r30
+GATHER  r32, r25, r30
+GATHER  r33, r26, r30
+GATHER  r34, r29, r30
+OUT     r31, r33, r34
