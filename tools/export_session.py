@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Export AI session records into the repo (text only, no binaries).
 
-  python3 tools/export_session.py [SESSION_ID ...]      default: cf78df4d-6085-4d1f-90b5-dfd32d2a4e14
+  python3 tools/export_session.py [--no-git] [SESSION_ID ...]      default: cf78df4d-6085-4d1f-90b5-dfd32d2a4e14
+
+--no-git skips regenerating git-history/ (the Stop hook uses it, so every commit doesn't
+show up as a fresh diff; run without it before your final commit).
 
 Each SESSION_ID is a main Cortex Code session; its subagent sessions are found and
 exported with it. Exports accumulate: running it for one session never overwrites
@@ -168,7 +171,9 @@ def write_git_history():
 
 
 def main():
-    ids = sys.argv[1:] or [DEFAULT]
+    args = sys.argv[1:]
+    no_git = "--no-git" in args
+    ids = [a for a in args if a != "--no-git"] or [DEFAULT]
     os.makedirs(RAW, exist_ok=True)
     os.makedirs(PROMPTS, exist_ok=True)
     stats = {"blobs": 0, "bytes": 0}
@@ -181,8 +186,10 @@ def main():
         for x, typ, n, title in exported:
             print(f"  {x}  {typ:<8} {n:>4} msgs  {title}")
     total = write_index()
-    write_git_history()
-    print(f"index: {total} main session(s) in prompts/INDEX.md; base64 payloads omitted: {stats['blobs']} ({stats['bytes']} chars)")
+    if not no_git:
+        write_git_history()
+    print(f"index: {total} main session(s) in prompts/INDEX.md; git-history {'skipped' if no_git else 'refreshed'}; "
+          f"base64 payloads omitted: {stats['blobs']} ({stats['bytes']} chars)")
 
 
 if __name__ == "__main__":
