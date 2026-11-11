@@ -1,0 +1,23 @@
+; easy: the same work spelled differently: swapped operands of AND/EQ/ADD, LT vs flipped GT,
+; and a LOAD whose table/column names differ only in case. CSE must merge each pair.
+LOAD    a, orders.o_amt
+LOAD    b, ORDERS.O_AMT
+LOAD    q, orders.o_qty
+LOAD    id, orders.o_id
+GT      m1, a, 100.00
+LT      m2, 100.00, b
+GE      k1, q, 3
+LE      k2, 3, q
+AND     x, m1, k1
+AND     y, k2, m2
+ADD     s1, q, id
+ADD     s2, id, q
+EQ      e1, s1, 10
+EQ      e2, 10, s2
+OR      f, x, e1
+OR      g, e2, y
+AND     h, f, g
+IDX     i, h
+GATHER  o1, id, i
+GATHER  o2, s2, i
+OUT     o1, o2

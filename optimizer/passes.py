@@ -29,6 +29,23 @@ def dce(prog):
     return keep, len(keep) != len(prog)
 
 
+# Operand order doesn't change the result (or which rows error) for these:
+# AND/OR are symmetric [doc: logic.md#and-or]; ADD/MUL exact then rounded once;
+# EQ/NE/IS compare both ways the same. LT a,b is GT b,a (same for LE/GE).
+COMMUTATIVE = {"AND", "OR", "ADD", "MUL", "EQ", "NE", "IS"}
+FLIP = {"LT": "GT", "GT": "LT", "LE": "GE", "GE": "LE"}
+
+
+def _cse_key(op, srcs, same_dest):
+    if op == "LOAD":                       # table and column names ignore case
+        return (op, (srcs[0].lower(),), same_dest)
+    if op in COMMUTATIVE and len(srcs) == 2:
+        return (op, tuple(sorted(srcs)), same_dest)
+    if op in FLIP and len(srcs) == 2 and srcs[1] < srcs[0]:
+        return (FLIP[op], (srcs[1], srcs[0]), same_dest)
+    return (op, tuple(srcs), same_dest)
+
+
 def cse(prog):
     seen, sub, out, changed = {}, {}, [], False
     for ins in prog:
@@ -38,7 +55,13 @@ def cse(prog):
             out.append(ins)
             continue
         same_dest = len(ins.dests) == 2 and ins.dests[0] == ins.dests[1]
-        key = (ins.op, tuple(srcs), same_dest)
+        # AND/OR x, x is x (TRUE/FALSE/NULL each map to themselves; only a non-BOOL x
+        # would differ, by erroring, and removing an error is allowed)
+        if ins.op in ("AND", "OR") and len(srcs) == 2 and srcs[0] == srcs[1] and kind(srcs[0]) == "reg":
+            sub[ins.dests[0]] = srcs[0]
+            changed = True
+            continue
+        key = _cse_key(ins.op, srcs, same_dest)
         if key in seen:
             for d, e in zip(ins.dests, seen[key]):
                 sub[d] = e
