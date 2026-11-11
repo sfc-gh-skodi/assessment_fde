@@ -203,7 +203,59 @@ def filter_first(prog, schema=None):
     return out, True
 
 
-PASSES = [gather_chain, filter_first, cse, dce]
+def sorted_sort(prog, schema=None):
+    """Rule 3: SORT over rows already in stored order -> IOTA (positions 0..n-1).
+
+    The schema's `sorted` constraint says rows are stored in ascending order of
+    those columns as ASC NF sorts them (docs/running.md). If every key is ASC NF,
+    the keys are a prefix of that column list, and analyze says the key rows are
+    still in stored order (sorted_by: a LOAD, or gathered through ascending
+    positions), the rows are already ordered, so the stable SORT returns 0..n-1.
+    This is a schema constraint, true of every table set; stats are not used.
+
+    Also GATHER(s, IOTA(x)) -> s when s and x are the same rows: d[k] = s[k]."""
+    if schema is None:
+        return prog, False
+    info = analyze(prog, schema)
+    defs, out, changed, sub = _defs(prog), [], False, {}
+    for ins in prog:
+        ins = Instr(ins.op, ins.dests, [_rename(t, sub) for t in ins.srcs])
+        if ins.op == "SORT" and _already_sorted(ins.srcs, info):
+            out.append(Instr("IOTA", ins.dests, [key_reg(ins.srcs[0])]))
+            changed = True
+            continue
+        if ins.op == "GATHER" and all(kind(t) == "reg" for t in ins.srcs):
+            s, i = ins.srcs
+            di = defs.get(i)
+            si, xi = info.get(s), info.get(di.srcs[0]) if di is not None and di.op == "IOTA" else None
+            if si is not None and xi is not None and si.kind == "col" and si.domain is not None \
+                    and si.domain == xi.domain:
+                sub[ins.dests[0]] = s
+                changed = True
+                continue
+        out.append(ins)
+    return out, changed
+
+
+def _already_sorted(keys, info):
+    cols, dom, valid = [], None, None
+    for t in keys:
+        p = t.split()
+        if kind(t) != "key" or p[1:] != ["ASC", "NF"]:
+            return False
+        r = info.get(p[0])
+        if r is None or r.kind != "col" or not r.column or not r.sorted_by or r.domain is None:
+            return False
+        tab, col = r.column.split(".", 1)
+        if dom is None:
+            dom, valid, table = r.domain, r.sorted_by, tab
+        if r.domain != dom or r.sorted_by != valid or tab != table:
+            return False
+        cols.append(col)
+    return bool(cols) and tuple(cols) == tuple(valid[:len(cols)])
+
+
+PASSES = [gather_chain, filter_first, sorted_sort, cse, dce]
 
 
 def run(prog, schema=None, deadline=None):
