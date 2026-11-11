@@ -94,9 +94,9 @@
  "hasPendingEdits": true,
  "stats": {
   "diff": {
-   "fileCount": 17,
-   "added": 2010,
-   "removed": 34
+   "fileCount": 2,
+   "added": 42,
+   "removed": 20
   }
  },
  "subagentRefs": [

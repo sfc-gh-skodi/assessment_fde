@@ -33,6 +33,12 @@
                         { "type": "file", "path": "ai-sessions/raw/d65688c6-2dd5-4500-a93d-ca38d871240b.json" },
                         { "type": "query", "sql": "SELECT h.THREAD_ID, f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits, MIN(h.USAGE_TIME) AS first_use, MAX(h.USAGE_TIME) AS last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'desktop' AND h.USAGE_TIME >= '2026-11-11 01:38:00 +0000' GROUP BY 1, 2 ORDER BY credits DESC" }],
         "producerNotes": "Tier numbers from tools/loop.py --gate 1,2,3 at commit 82fa409 (runs/loop.jsonl, 01:57 UTC). Example cycles from bin/minivm on examples/data.json. Optimizer wall times measured with subprocess timing over 66 programs incl. tests/stress. AI usage queried ~02:26 UTC: this session is THREAD_ID 82264130449 (first use 01:38:50); thread 82264130433 (01:38-01:52) is session 1's tail and is excluded; ACCOUNT_USAGE lags, so the last minutes are missing." },
+      { "id": "round-3", "title": "Round 3: five more optimizer improvements",
+        "dataSources": [{ "type": "file", "path": "progress.md" }, { "type": "file", "path": "runs/loop.jsonl" }, { "type": "file", "path": "git log 98bf7f9..876f850" },
+                        { "type": "file", "path": "golden_heldout/reports/ (summary lines only; folder kept out of git)" },
+                        { "type": "file", "path": "prompts/d65688c6_user_prompts.md" },
+                        { "type": "query", "sql": "SELECT f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits, MIN(h.USAGE_TIME) AS first_use, MAX(h.USAGE_TIME) AS last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'desktop' AND h.THREAD_ID = 82264130449 AND h.USAGE_TIME >= '2026-11-11 03:52:00 +0000' GROUP BY 1 ORDER BY credits DESC" }],
+        "producerNotes": "Same session as session 2 (d65688c6), prompt 9 at 03:52 UTC. Per-step numbers from tools/loop.py rows 8-12 in progress.md and the golden runner's summary line after each step; final tiers from loop.py --gate 1,2,3 at 876f850. AI usage queried ~04:40 UTC from 03:52 UTC; it includes the push at 04:30 and ACCOUNT_USAGE lag may hide the last minutes." },
       { "id": "next", "title": "Where we stopped and what's next", "dataSources": [{ "type": "file", "path": "progress.md" }] }
     ]
   }
@@ -290,11 +296,92 @@ Then stop.</p>
 Queried ~02:26 UTC; ACCOUNT_USAGE lags, so requests after ~02:11 are not yet included. The overlapping thread <code>82264130433</code> (01:38–01:52) is session 1's tail and is excluded.
 Combined with session 1: ≈ 21.6 credits.</p>
 
+<h2 id="round-3">Round 3: five more optimizer improvements</h2>
+<p class="sub">Same session <code>d65688c6</code> · claude-opus-5-5 · 2026-11-11 03:52 → 04:30 UTC · no subagents ·
+5 commits (<code>a844130</code>, <code>7725472</code>, <code>a926e19</code>, <code>f27c433</code>, <code>876f850</code>) · ≈ 3.5 credits</p>
+
+<p>Ask: add register reuse at emit, then filter pushdown below joins and sorts, lookup-join detection for not-null refs to a key,
+range folds that require <code>not_null</code>, and SORT+SLICE → TOPK. After each step: <code>tools/loop.py</code>, then the
+<b>golden held-out set</b> (<code>golden_heldout/run_golden.py optimizer</code>), then gate + <code>progress.md</code> row + one commit.
+The golden set's README says the build agent must not study it, so only each run's summary line was read, never the case files.</p>
+
+<div class="cards">
+  <div class="card"><div class="v ok">0</div><div class="l">defects in 11,611 checks (full evaluate, seeds 1, 2, 3)</div></div>
+  <div class="card"><div class="v ok">10/10</div><div class="l">golden held-out cases correct after every step</div></div>
+  <div class="card"><div class="v">1.46×</div><div class="l">suite speedup, up from 1.30×; golden ratio 0.730 → 0.680</div></div>
+  <div class="card"><div class="v">2.03–2.40×</div><div class="l">on generated programs (seeds 1 / 2 / 3), up from 1.75–2.18×</div></div>
+</div>
+
+<h3>Step by step</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>UTC</th><th>Rule (ELI5)</th><th>How it stays correct</th><th>Suite</th><th>Golden</th><th>Commit</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>03:53</td><td>Baseline.</td><td>—</td><td class="n">1.30×</td><td class="n">10/10 · 0.730</td><td><code>98bf7f9</code></td></tr>
+<tr><td>1</td><td>04:03</td><td><b>Register reuse at emit.</b> When a box isn't needed anymore, the next value goes in that box, so the program never holds too many at once.</td>
+<td>A name is reused only after its last reader. The emitted text is re-read and must be the same program, or the plain version is printed. Cheap clean-up passes now run first, and every pass checks the deadline (20k-instruction program 0.66 s → 0.50 s).</td>
+<td class="n">1.30× (registers 1,075 → 370)</td><td class="n">10/10 · 0.730</td><td><code>a844130</code></td></tr>
+<tr><td>2</td><td>04:09</td><td><b>Filter pushdown below SORT and joins.</b> Throw away rows first, then sort or match only what is kept.</td>
+<td>A stable sort of the kept rows equals the kept rows of the stable sort. Below a join the predicate also sees unmatched rows, so only predicates that can't error move there (type-checked comparisons, AND/OR/NOT, ISNULL on stored columns). Kept only if the estimate drops.</td>
+<td class="n">1.37× (medium 1.11 → 1.33)</td><td class="n">10/10 · 0.730</td><td><code>7725472</code></td></tr>
+<tr><td>3</td><td>04:13</td><td><b>Lookup joins.</b> When the table rules promise each left row has exactly one partner, the left side is just walked in order.</td>
+<td>Schema only: left key never NULL and <code>refs</code> the right table's whole <code>key</code>; right key is that column loaded as stored. Kept only if the estimate drops; runs in a second phase.</td>
+<td class="n">1.37×</td><td class="n">10/10 · 0.730</td><td><code>a926e19</code></td></tr>
+<tr><td>4</td><td>04:21</td><td><b>Range folds.</b> If a number is always between 1 and 500 and never empty, "is it ≥ 1?" is always yes.</td>
+<td><code>check</code> bounds only non-NULL values, so a comparison folds only if the column is also <code>key</code> / <code>not_null</code>. TRUE/FALSE then simplify IDX, NOT, AND, OR; AND/OR drop an operand only when it is a BOOL from a comparison.</td>
+<td class="n">1.42×</td><td class="n">10/10 · 0.707</td><td><code>f27c433</code></td></tr>
+<tr><td>5</td><td>04:24</td><td><b>SORT + SLICE → TOPK.</b> To keep the top few, use the "top few" tool instead of sorting the whole pile.</td>
+<td>TOPK is defined as the first n positions of the same SORT, so keys and tie-breakers stay identical. <code>SLICE(GATHER(x, p))</code> is first moved onto <code>p</code>. Kept only if the estimate drops.</td>
+<td class="n">1.46×</td><td class="n">10/10 · 0.680</td><td><code>876f850</code></td></tr>
+</tbody></table></div>
+
+<h3>Speedup per tier, before and after</h3>
+<div class="chart-box"><canvas id="tiers3"></canvas></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Tier</th><th>Programs</th><th>Before (<code>98bf7f9</code>)</th><th>After (<code>876f850</code>)</th><th>Defects</th></tr></thead>
+<tbody>
+<tr><td>examples</td><td class="n">8</td><td class="n">1.38×</td><td class="n">1.39×</td><td class="n ok">0</td></tr>
+<tr><td>easy</td><td class="n">16</td><td class="n">1.64×</td><td class="n">1.76×</td><td class="n ok">0</td></tr>
+<tr><td>medium</td><td class="n">15</td><td class="n">1.11×</td><td class="n">1.39×</td><td class="n ok">0</td></tr>
+<tr><td>complex</td><td class="n">12</td><td class="n">1.22×</td><td class="n">1.29×</td><td class="n ok">0</td></tr>
+<tr><td>HR schema</td><td class="n">11</td><td class="n">1.17×</td><td class="n">1.38×</td><td class="n ok">0</td></tr>
+<tr><th>all</th><th class="n">62</th><th class="n">1.30×</th><th class="n">1.46×</th><th class="n ok">0</th></tr>
+</tbody></table></div>
+<p class="sub">Generated programs (<code>./evaluate</code>): 2.03× / 2.23× / 2.40× on seeds 1 / 2 / 3. Slowest <code>./optimize</code>: 0.58 s on the
+20,000-instruction stress program; normal programs &lt; 0.1 s (limit 1 s).</p>
+
+<h3>What we learned</h3>
+<ol>
+<li><b>Memory and speed fixes can fight.</b> Register reuse added a re-read check and pushed the 20k program to 0.66 s. Running cheap clean-up
+first (20,000 → 4,896 instructions before the analysis rules run) more than paid it back.</li>
+<li><b>Pass order matters.</b> Lookup joins made 8 programs 1–3% slower when they ran early, because they removed the pattern filter pushdown
+matches on. A second phase, after everything else settles, turned that into 6 better / 0 worse. Comparing per-program cycles with and without
+the rule is what exposed it; the tier geomean only moved by 0.01.</li>
+<li><b>Moving work can add crashes.</b> Below a SORT a filter sees the same rows, so anything can move. Below a join it sees rows the join would
+have dropped, so only predicates that provably can't error may move, and only types we are sure of (stored columns) count.</li>
+<li><b>Constraints decide, stats price.</b> Lookup joins and range folds use only <code>refs</code>, <code>key</code>, <code>not_null</code>
+and <code>check</code>, which every table set must obey. Stats only choose between correct versions.</li>
+<li><b>A held-out set keeps us honest.</b> The golden set never fed the rules; it only confirmed 10/10 after each step, and its ratio moved only
+when general rules (range folds, TOPK) applied.</li>
+</ol>
+
+<h3>AI usage (this round)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Model</th><th>Requests</th><th>Input</th><th>Cache read</th><th>Cache write</th><th>Output</th><th>Credits</th></tr></thead>
+<tbody>
+<tr><td>claude-opus-5-5</td><td class="n">39</td><td class="n">84</td><td class="n">10,398,223</td><td class="n">609,143</td><td class="n">63,670</td><td class="n">3.520</td></tr>
+<tr><th>Total</th><th class="n">39</th><th colspan="4" class="n">≈ 11.0 M tokens in (94% cache reads), 0.06 M out</th><th class="n">≈ 3.5</th></tr>
+</tbody></table></div>
+<p class="sub">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, Desktop, user SKODI, THREAD_ID <code>82264130449</code>,
+from 03:52 UTC (includes the push at 04:30). Queried ~04:40 UTC; ACCOUNT_USAGE lags, so the last minutes may be missing.
+Whole session <code>d65688c6</code> so far: ≈ 8.5 credits (rules 1–4, checks and reports, and this round).</p>
+
 <h2 id="next">Where we stopped and what's next</h2>
 <ul>
-<li><b>State:</b> commit <code>82fa409</code>. 0 defects, suite 1.30×, examples 1.38× (hand-optimized reference 3.06×), generated 1.75–2.18×.</li>
+<li><b>State:</b> commit <code>876f850</code>. 0 defects, suite 1.46×, examples 1.39× (hand-optimized reference 3.06×), generated 2.03–2.40×, golden 10/10 at 0.680.</li>
+<li><b>Done in round 3:</b> register reuse, filter pushdown below SORT/joins, lookup joins, range folds, SORT+SLICE → TOPK.</li>
 <li><b>Done in session 2:</b> items 1–4 of the plan (gather composition, compute after filter, identity SORT on <code>sorted</code> tables, dead SORT + NLJOIN→HJOIN).</li>
-<li><b>Small follow-ups:</b> lower the 0.7 s deadline (or skip the analysis-heavy rules on very large programs) to widen the 1-second margin; check why the cost model mis-predicted q0006; let <code>tools/bench.py</code> pick up a <code>tests/regressions/</code> folder.</li>
+<li><b>Small follow-ups:</b> check why the cost model mis-predicted q0006; let <code>tools/bench.py</code> pick up a <code>tests/regressions/</code> folder;
+the 20k-instruction program at 0.58 s is the closest to the 1 s limit.</li>
 <li><b>Later:</b> TOPK (30 min), filter pushdown + lookup joins (1.5 h), self-join idioms (2–3 h, gated; revert on any defect).</li>
 <li><b>Record:</b> raw sessions in <code>ai-sessions/raw/</code> (session 1 and its subagents: <code>fbd23c3f</code>, <code>8bd6e105</code>, <code>c6f9a650</code>, <code>ff2fe706</code>; session 2: <code>d65688c6</code>), prompts in <code>prompts/</code>, iteration logs in <code>progress.md</code> (rows 4–7) and <code>runs/</code>.</li>
 </ul>
@@ -329,6 +416,20 @@ Combined with session 1: ≈ 21.6 credits.</p>
       datasets: [
         { label: 'Before rules 1–4 (geomean ×)', data: [1.17, 1.17, 1.01, 1.03, 1.03, 1.08], backgroundColor: '#94a3b8' },
         { label: 'After rules 1–4 (geomean ×)', data: [1.38, 1.64, 1.11, 1.22, 1.17, 1.30], backgroundColor: '#29B5E8' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: fg } } },
+      scales: { x: { ticks: { color: fg }, grid: { color: grid } },
+                y: { beginAtZero: true, ticks: { color: fg }, grid: { color: grid }, title: { display: true, text: 'speedup (×)', color: fg } } } }
+  });
+  new Chart(document.getElementById('tiers3'), {
+    type: 'bar',
+    data: {
+      labels: ['examples', 'easy', 'medium', 'complex', 'HR schema', 'all'],
+      datasets: [
+        { label: 'Before round 3 (geomean ×)', data: [1.38, 1.64, 1.11, 1.22, 1.17, 1.30], backgroundColor: '#94a3b8' },
+        { label: 'After round 3 (geomean ×)', data: [1.39, 1.76, 1.39, 1.29, 1.38, 1.46], backgroundColor: '#29B5E8' }
       ]
     },
     options: { responsive: true, maintainAspectRatio: false,

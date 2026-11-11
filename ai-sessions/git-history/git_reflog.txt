@@ -1,3 +1,6 @@
+64da402 HEAD@{2026-11-11 07:12:03 -0500}: commit: Rule 11: per-row aggregate over a self-join -> drop NULL keys, then GROUP
+006a5ab HEAD@{2026-11-11 07:12:00 -0500}: commit: Rules 9-10: OR(x, NOT x) read only by IDX -> NOT ISNULL(x); ISNULL looks through NULL-in-NULL-out ops
+e3c3a44 HEAD@{2026-11-10 23:33:41 -0500}: commit: Future plan: add a graceful exit for each failure mode, plus exit rules that apply everywhere
 c0bf8c0 HEAD@{2026-11-10 23:30:04 -0500}: commit: Add TEST_SESSION.html; credit split by phase and the xhigh-thinking lesson; simpler future plan with scale, cost and failure-mode tests
 876f850 HEAD@{2026-11-10 23:24:38 -0500}: commit: SORT + SLICE -> TOPK with identical keys (SLICE moved onto sort positions first)
 f27c433 HEAD@{2026-11-10 23:21:51 -0500}: commit: Range folds from check bounds on not-null columns, plus TRUE/FALSE simplification

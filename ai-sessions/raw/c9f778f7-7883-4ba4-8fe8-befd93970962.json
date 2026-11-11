@@ -8,13 +8,13 @@
  "session_accounts": [
   "THB83496"
  ],
- "lastMessageDate": 1794371472033,
- "lastUserMessageDate": 1794371065496,
+ "lastMessageDate": 1794399937186,
+ "lastUserMessageDate": 1794399875145,
  "isEmpty": false,
  "isExternal": false,
  "creationDate": 1794352221867,
  "session_break_suppressed": false,
- "requestCount": 13,
+ "requestCount": 18,
  "inputState": {
   "contrib": {
    "planModeEnabled": false,
@@ -53,7 +53,7 @@
   "dismissed_fqns": [],
   "fallback_model_id": "claude-opus-5-5"
  },
- "history_length": 126,
+ "history_length": 255,
  "last_account_locator": "SFPSCOGS-SKODI_AWS_DEMO",
  "stats": {
   "diff": {
@@ -65,14 +65,14 @@
  "thread": {
   "threadId": "82264130453",
   "accountHost": "sfpscogs-skodi-aws-demo.snowflakecomputing.com",
-  "lastSyncedHistoryLength": 126
+  "lastSyncedHistoryLength": 254
  },
  "responseMetadata": {
-  "assistant_message_id": 5391261993823662,
+  "assistant_message_id": 5391261993804150,
   "auto_router_selected": false,
-  "created_on": 1794371471687,
+  "created_on": 1794399936298,
   "orchestration_model": "claude-opus-5-5",
-  "run_id": "82264130453-5391261993825986",
+  "run_id": "82264130453-5391261993820890",
   "summary_revision": "",
   "thinking_effort": "low",
   "thread_id": 82264130453,
@@ -81,28 +81,28 @@
     {
      "context_window": 1000000,
      "input_tokens": {
-      "cache_read": 263802,
-      "cache_write": 440,
-      "total": 264244,
+      "cache_read": 366384,
+      "cache_write": 1062,
+      "total": 367448,
       "uncached": 2
      },
      "model_name": "claude-opus-5-5",
      "model_role": "orchestration",
      "output_tokens": {
-      "total": 803
+      "total": 730
      }
     }
    ]
   },
-  "user_message_id": 5391261993825986
+  "user_message_id": 5391261993820890
  },
  "titleIsAIGenerated": true,
  "initialLocation": "panel",
  "hasPendingEdits": true,
  "lastTurn": {
-  "requestId": "request_92cba4b8-33e8-4429-9c1d-1e376b3a9cbe",
-  "userMessageId": "13925767",
+  "requestId": "request_8edea118-9ab1-4c3b-bccb-7d8243e391d0",
+  "userMessageId": "7c39e889",
   "outcome": "running",
-  "historyLength": 113
+  "historyLength": 243
  }
 }

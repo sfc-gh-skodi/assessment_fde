@@ -13,3 +13,10 @@ runs/loop.jsonl
 minivm-onepager.pdf
 *.pdf
 golden_heldout/
+# same generated files, at their paths after the 2026-11-11 reorganisation
+minivm-takehome/Pre_Build_inputs/prototype_code/optimizer_agent/data/
+minivm-takehome/Pre_Build_inputs/prototype_code/optimizer_agent/failures/
+minivm-takehome/tests/data/
+minivm-takehome/tests/stress/
+minivm-takehome/tests/runs/*_last*.json
+minivm-takehome/tests/runs/loop.jsonl

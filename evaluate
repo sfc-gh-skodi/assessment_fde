@@ -1,3 +1,0 @@
-#!/bin/sh
-# ./evaluate OPTIMIZER  ->  exit 0 if no defects found, non-zero otherwise
-exec python3 -B "$(dirname "$0")/evaluator/main.py" "$@"

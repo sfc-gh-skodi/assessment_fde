@@ -1,3 +1,0 @@
-#!/bin/sh
-# ./optimize program.mini schema.json  ->  an equivalent, cheaper MiniVM program
-exec python3 "$(dirname "$0")/optimizer/main.py" "$@"

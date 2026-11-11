@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export AI session records into the repo (text only, no binaries).
 
-  python3 tools/export_session.py [--no-git] [SESSION_ID ...]      default: cf78df4d-6085-4d1f-90b5-dfd32d2a4e14
+  python3 minivm-takehome/tools/export_session.py [--no-git] [SESSION_ID ...]      default: cf78df4d-6085-4d1f-90b5-dfd32d2a4e14
 
 --no-git skips regenerating git-history/ (the Stop hook uses it, so every commit doesn't
 show up as a fresh diff; run without it before your final commit).
@@ -30,12 +30,15 @@ runs this script for every session whose working directory is this repo.
 """
 import datetime, glob, json, os, re, subprocess, sys
 
-REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+HERE = os.path.dirname(os.path.abspath(__file__))
+# the git repo root, wherever tools/ now lives inside it
+REPO = subprocess.run(["git", "-C", HERE, "rev-parse", "--show-toplevel"], capture_output=True,
+                      text=True).stdout.strip() or os.path.normpath(os.path.join(HERE, ".."))
 CONV = os.path.expanduser("~/.snowflake/cortex/conversations")
 DEFAULT = "cf78df4d-6085-4d1f-90b5-dfd32d2a4e14"
 NOISE = ("<system-reminder>", "<system_context_from_session_hook>")
 RAW = os.path.join(REPO, "ai-sessions", "raw")
-PROMPTS = os.path.join(REPO, "prompts")
+PROMPTS = os.path.join(REPO, "ai-sessions", "prompts")
 
 
 def scrub(obj, stats):
@@ -153,7 +156,7 @@ def write_index():
         rows.append((started, sid, m.get("title", ""), n, len(subagent_ids(m))))
     rows.sort()
     with open(os.path.join(PROMPTS, "INDEX.md"), "w") as f:
-        f.write("# Exported sessions\n\nRegenerate: `python3 tools/export_session.py <session-id> ...`\n\n")
+        f.write("# Exported sessions\n\nRegenerate: `python3 minivm-takehome/tools/export_session.py <session-id> ...`\n\n")
         f.write("| Started | Session | Title | User prompts | Subagents | Files |\n|---|---|---|---|---|---|\n")
         for started, sid, title, n, nsub in rows:
             f.write(f"| {started} | `{sid}` | {title} | {n} | {nsub} | "
@@ -162,7 +165,7 @@ def write_index():
 
 
 def write_git_history():
-    gh = os.path.join(REPO, "git-history")
+    gh = os.path.join(REPO, "ai-sessions", "git-history")
     os.makedirs(gh, exist_ok=True)
     git = lambda *a: subprocess.run(["git", "-C", REPO, *a], capture_output=True, text=True).stdout
     open(os.path.join(gh, "git_log.txt"), "w").write(git("log", "--stat", "--format=fuller", "--all"))
