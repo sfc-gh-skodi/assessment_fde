@@ -24,10 +24,28 @@ Figures come from the per-session sections in `ai-sessions/*.html`, attributed b
 
 | Phase | Where | Credits |
 |---|---|---|
-| Planning (research, prototypes, build plan) | Desktop | ~15.8 |
-| Independent plan review | CLI | ~4.7 |
-| Build session 1 (evaluator, test suite, optimizer skeleton) | Desktop, 3 subagents | ~19.2 |
-| Build session 2 (optimizer rules 1–4) | Desktop | ~2.4 |
-| Held-out analysis and packaging (this session) | Desktop | remainder ≈ 9.8 (also includes ~2.8 CLI credits not attributed to the review session) |
+| **Planning** (research, prototypes, build plan; session `cf78df4d`) | Desktop | ~18.0 |
+| **Planning:** independent plan review | CLI | ~4.7 |
+| **Building:** session 1 (evaluator, test suite, optimizer skeleton; `fbd23c3f`) | Desktop, 3 subagents | ~19.2 |
+| **Building:** session 2 (optimizer rules 1–4; `d65688c6`) | Desktop | ~2.4 |
+| **Testing:** held-out check, analysis, packaging (`c9f778f7`) | Desktop | ~2.9 so far |
+| Not attributed to a session (other CLI use, `d65688c6` reopened later) | CLI + Desktop | ~4.7 |
+
+By phase: **planning ≈ 22.7 (44%)**, **building ≈ 21.6 (42%)**, **testing ≈ 2.9 (6%)**, unattributed ≈ 4.7 (9%).
+
+The planning figure was ~15.8 in the planning session's own record. Re-querying the same window later gives ~18.0, most likely because ACCOUNT_USAGE had not caught up when it was first measured.
+
+## Lesson: thinking effort was set too high for planning
+
+Each message in the raw session files records a `thinkingEffort`. Planning (`cf78df4d`) is the only session that used **xhigh**; building and testing ran at medium or low. Desktop usage for the planning session, split by when the effort changed:
+
+| Effort window (UTC) | Requests | Output tok / request | Credits | Credits / request |
+|---|---|---|---|---|
+| low, 19:50–20:05 (claude-sonnet-5-5) | 21 | ~220 | 0.35 | 0.017 |
+| **xhigh, 20:05–20:37** (claude-opus-5-5) | 27 | ~6,660 | **4.29** | **0.159** |
+| high, 20:37–20:42 | 3 | ~4,270 | 0.46 | 0.153 |
+| medium, 20:42–22:32 | 177 | ~1,280 | 12.94 | 0.073 |
+
+At xhigh each request wrote about 5× the output tokens of a medium request and cost about 2.2× the credits. Planning work (reading the docs, hand-optimizing the examples, drafting the plan) did not need that much reasoning; medium would have done. At the medium rate those 27 requests would have cost about 2.0 credits, so **xhigh cost roughly 2.3 extra credits, about 4% of the project total**. The amount is small, but it's avoidable. Next time, thinking effort is set per task: high only for hard reasoning, such as proving a rewrite safe, and medium or low for routine work.
 
 Dollar cost depends on the account's contracted credit price, which I have not assumed here.

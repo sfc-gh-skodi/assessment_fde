@@ -2,7 +2,7 @@
 
 Session `c9f778f7-7883-4ba4-8fe8-befd93970962` · Golden Set Optimizer Report
 
-prompts: 8
+prompts: 13
 
 ## 1. 2026-11-11 02:54:37 UTC
 
@@ -65,3 +65,30 @@ before we do any of this lets clean up uneccesary documents . Create ap apckage 
 D o n o t s e n d u s a n y b i n a r y fi l e s , including bin/minivm.
 2. A written plan: what would you do with a few days and unlimited compute and tokens?
 3. Which AI models you used, and roughly how many tokens or how much spend.
+
+## 9. 2026-11-11 04:07:34 UTC
+
+Add this sessions details into TEST_SESSION.HTML along with ither detaisl
+
+## 10. 2026-11-11 04:15:27 UTC
+
+explain here hwo the credits split out in planning, building and testing phase and how we made the mistake of using xlarge thinking mode for planning when medium would have been okay : 3. AI models and spend
+AI_USAGE.md: models, tokens and credits, from Snowflake's Cortex Code usage history (≈ 51.9 credits in total).
+
+## 11. 2026-11-11 04:21:02 UTC
+
+in the future plan include the following to improve outputs 
+optimizer ; do join ordering by cost with an explain for why , let all rewritws compete at once instead of running in an order, more rewrite rules, each shipped with it buggy twin, translation validation inside the optimizer 
+Evaluator : (same format as optimizer)
+Coverage guided data generation, an automated red team that writes new buggy optimizaiton, golden style traps, Nighlty runs at scale . 
+Build out the three loops : optimizer against evlauator, evlauator against the validation set and a helpd out set rebuilt by a fresh agent whenever a case is burnt
+
+## 12. 2026-11-11 04:22:34 UTC
+
+Keep the language simple in the future plan : also add plans about scalability extreme tests, cost analysis and falure modes testing as mentioned in the build plan
+
+## 13. 2026-11-11 04:24:25 UTC
+
+continue this : Your previous request didn't finish because the command was cancelled. That was the credit split by phase and the thinking-mode lesson in section 3 of SUBMISSION.md. What I found: the raw session files record a thinkingEffort per message. Planning (cf78df4d) is the only session that used xhigh (12 messages, plus 2 at high), and building and testing ran at medium or low. I haven't yet matched the xhigh turns to their credits, so I can't yet say how much it cost.
+
+I still need to write that section, commit, re-export the session and rebuild the zip.

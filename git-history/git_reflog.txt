@@ -1,3 +1,9 @@
+876f850 HEAD@{2026-11-10 23:24:38 -0500}: commit: SORT + SLICE -> TOPK with identical keys (SLICE moved onto sort positions first)
+f27c433 HEAD@{2026-11-10 23:21:51 -0500}: commit: Range folds from check bounds on not-null columns, plus TRUE/FALSE simplification
+a926e19 HEAD@{2026-11-10 23:13:28 -0500}: commit: Lookup-join detection from not-null refs to a whole key; second pass phase so it doesn't block pushdown
+7725472 HEAD@{2026-11-10 23:09:03 -0500}: commit: Filter pushdown below SORT and joins (joins: only predicates that cannot error)
+a844130 HEAD@{2026-11-10 23:03:37 -0500}: commit: Register reuse at emit (re-read and shape-checked); per-pass deadline; clean-up passes first
+98bf7f9 HEAD@{2026-11-10 22:38:36 -0500}: commit: Refresh raw session exports, prompts and git history for the submission
 5058fcb HEAD@{2026-11-10 22:38:20 -0500}: commit: Package for submission: add SUBMISSION, FUTURE_PLAN, AI_USAGE; stop tracking the PDF; keep the held-out set out of the repo
 887ffa5 HEAD@{2026-11-10 21:29:10 -0500}: commit: Add session 2 (optimizer rules 1-4) to BUILD_SESSION.html; export its raw records, prompts and refreshed git history
 82fa409 HEAD@{2026-11-10 20:53:39 -0500}: commit: Rule 4: drop SORTs that only feed GALL totals; NLJOIN -> HJOIN when cheaper

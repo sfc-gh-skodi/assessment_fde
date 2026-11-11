@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>Test session: held-out check, analysis and packaging</title>
+  <script type="application/json" id="snowflake-report-metadata">
+  {
+    "generated": "2026-11-11",
+    "intent": "Record of the TEST session c9f778f7-7883-4ba4-8fe8-befd93970962 (Cortex Code Desktop, no subagents): reading the held-out golden-set optimizer report, analysing the three cases left untouched, estimating rules and their payoff, and packaging the submission.",
+    "dataSources": [
+      { "type": "file", "path": "ai-sessions/raw/c9f778f7-7883-4ba4-8fe8-befd93970962.json" },
+      { "type": "file", "path": "ai-sessions/raw/c9f778f7-7883-4ba4-8fe8-befd93970962.history.jsonl" },
+      { "type": "file", "path": "prompts/c9f778f7_user_prompts.md" }
+    ],
+    "sections": [
+      { "id": "overview", "title": "The session in one paragraph" },
+      { "id": "timeline", "title": "Step by step", "dataSources": [{ "type": "file", "path": "prompts/c9f778f7_user_prompts.md" }] },
+      { "id": "golden-results", "title": "Held-out report: what it said",
+        "dataSources": [{ "type": "file", "path": "golden_heldout/reports/optimizer-20261110-215238.md" }],
+        "producerNotes": "Numbers copied from the report the user pasted (run_golden.py optimizer, 2026-11-10 21:52 local). The golden_heldout folder is not in the submission." },
+      { "id": "untouched", "title": "The three cases left untouched",
+        "dataSources": [{ "type": "file", "path": "golden_heldout/cases/01_selfjoin_max_null_keys/case.json" }, { "type": "file", "path": "golden_heldout/cases/03_check_bound_null_fold/case.json" }, { "type": "file", "path": "golden_heldout/cases/06_tautology_three_valued/case.json" }],
+        "producerNotes": "Legal-rewrite ratios = geomean over d0..d3 of cycles_legal / cycles_original from each case.json." },
+      { "id": "projection", "title": "Estimated payoff",
+        "producerNotes": "Overall geomean recomputed by replacing the three 1.000 ratios in the 10-case log-sum (ln 0.730 x 10). Assumes our rewrite costs what legal.mini costs." },
+      { "id": "decisions", "title": "Decisions made" },
+      { "id": "packaging", "title": "Packaging the submission",
+        "dataSources": [{ "type": "file", "path": "git log 887ffa5..98bf7f9" }, { "type": "file", "path": "SUBMISSION.md" }] },
+      { "id": "ai-usage", "title": "AI models and usage",
+        "dataSources": [{ "type": "query", "sql": "SELECT h.THREAD_ID, LOWER(h.INTERFACE) iface, f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),3) credits, MIN(h.USAGE_TIME) first_use, MAX(h.USAGE_TIME) last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND h.USAGE_TIME >= '2026-11-11 02:50:00 +0000' GROUP BY 1,2,3 ORDER BY credits DESC" }],
+        "producerNotes": "Queried 2026-11-11 ~04:10 UTC. This session is thread 82264130453 (thread_id in its local session file). Thread 82264130449 (from 03:16) matches session d65688c6 being resumed, so it is excluded. ACCOUNT_USAGE lags, so the last turns are missing." },
+      { "id": "next", "title": "Where we stopped and what's next", "dataSources": [{ "type": "file", "path": "FUTURE_PLAN.md" }] }
+    ]
+  }
+  </script>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, system-ui, sans-serif; line-height: 1.5;
+      max-width: 880px; width: 100%; box-sizing: border-box;
+      margin: 0 auto; padding: clamp(16px, 4vw, 24px);
+      color: light-dark(#1f2937, #e5e7eb); background: light-dark(#ffffff, #0b1220);
+    }
+    h1, h2, h3 { color: light-dark(#0f172a, #f1f5f9); }
+    h2 { margin-top: 2em; border-bottom: 1px solid light-dark(#e5e7eb, #1f2937); padding-bottom: 4px; }
+    a { color: light-dark(#2563eb, #60a5fa); }
+    code { background: light-dark(#f3f4f6, #1f2937); padding: 1px 4px; border-radius: 4px; font-size: 0.92em; }
+    pre { background: light-dark(#f3f4f6, #111827); padding: 10px; border-radius: 6px; overflow-x: auto; }
+    img, svg { max-width: 100%; height: auto; }
+    .meta { color: light-dark(#6b7280, #9ca3af); font-size: 0.92em; }
+    .table-wrap { overflow-x: auto; margin: 12px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.94em; }
+    th, td { border: 1px solid light-dark(#d1d5db, #374151); padding: 6px 10px; text-align: left; vertical-align: top; }
+    th { background: light-dark(#f3f4f6, #1f2937); font-weight: 600; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .chart-box { position: relative; width: 100%; height: clamp(260px, 45vw, 340px); }
+    .chart-box > canvas { width: 100% !important; height: 100% !important; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 12px 0; }
+    .card { border: 1px solid light-dark(#e5e7eb, #1f2937); border-radius: 8px; padding: 10px 12px; }
+    .card b { display: block; font-size: 1.4em; color: light-dark(#0f172a, #f1f5f9); }
+    .note { border-left: 3px solid light-dark(#f59e0b, #fbbf24); padding: 6px 12px; background: light-dark(#fffbeb, #1c1917); }
+  </style>
+</head>
+<body>
+
+<h1>Test session: held-out check, analysis and packaging</h1>
+<p class="meta">Session <code>c9f778f7-7883-4ba4-8fe8-befd93970962</code> · Cortex Code Desktop · 2026-11-11 02:54 → ~04:10 UTC · no subagents · 9 user prompts · 2 commits (<code>5058fcb</code>, <code>98bf7f9</code>) · ≈ 2.9 credits</p>
+
+<h2 id="overview">The session in one paragraph</h2>
+<p>The optimizer from the build sessions was run once on the 10-case held-out trap set, which was built outside the build sessions. It got <b>10/10 correct</b> with a geomean cycles ratio of <b>0.730</b>. This session explained the report, then looked at why three cases came back at 1.000. In all three the optimizer printed the input unchanged, because no existing pass matched. For each case we worked out a cheaper rewrite that is still legal. We then estimated how long each would take to build and what it would do to the overall number. We decided not to take the tempting shortcut of having the optimizer replay known answers, because that would overfit to the held-out set. No optimizer code was changed in this session. It ended by cleaning the repo and building the submission package.</p>
+
+<div class="cards">
+  <div class="card">Correct on held-out<b>10 / 10</b></div>
+  <div class="card">Geomean cycles ratio<b>0.730</b></div>
+  <div class="card">Cases untouched<b>3</b></div>
+  <div class="card">Est. ratio, all three fixed<b>≈ 0.630</b></div>
+</div>
+
+<h2 id="timeline">Step by step</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Time (UTC)</th><th>Prompt (short)</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>02:54</td><td>Explain the golden-set optimizer report</td><td>Explained the columns (verdict, worst dataset, cycles ratio, optimizer time) and the headline: correctness passes; three cases show no speedup.</td></tr>
+<tr><td>2</td><td>02:57</td><td>Look at the three 1.000 cases</td><td>Read the program, trap and legal versions plus <code>case.json</code> for cases 01, 03 and 06. Ran <code>./optimize</code> on each and confirmed it outputs the program unchanged. Read <code>optimizer/</code> to see which passes exist, and proposed one safe rule per case.</td></tr>
+<tr><td>3</td><td>03:07</td><td>Time estimate for each</td><td>06 ≈ 15–25 min, 03 ≈ 25–40 min, 01 ≈ 1.5–3 h (a multi-instruction pattern with the most risk).</td></tr>
+<tr><td>4</td><td>03:08</td><td>ELI5 cycles ratio (geomean)</td><td>Ratio = optimized ÷ original cycles; the geomean averages it across datasets fairly. A 1.000 is not a defect, just a missed speedup.</td></tr>
+<tr><td>5</td><td>03:24</td><td>Is there a faster way to learn from these?</td><td>Advised against replaying known answers (overfitting). Faster legitimate options: one shared NULL-aware filter pass for 03 and 06, the evaluator as the inner test loop, and a narrow version of 01.</td></tr>
+<tr><td>6</td><td>03:25</td><td>How long with the evaluator loop only?</td><td>About 30–50 min for 03 and 06. The time saved is in testing; writing the rules takes the same time.</td></tr>
+<tr><td>7</td><td>03:27</td><td>Fastest route, current vs future performance</td><td>Projected the overall geomean: 0.730 now → ≈ 0.697 with 03 + 06 → ≈ 0.630 with 01 as well.</td></tr>
+<tr><td>8</td><td>03:30</td><td>Clean up and package the submission</td><td>Removed clutter, wrote <code>SUBMISSION.md</code>, <code>FUTURE_PLAN.md</code> and <code>AI_USAGE.md</code>, exported every session, committed, built the zip and checked it holds no binaries.</td></tr>
+<tr><td>9</td><td>~04:05</td><td>Add this session to TEST_SESSION.html</td><td>This page.</td></tr>
+</tbody></table></div>
+
+<h2 id="golden-results">Held-out report: what it said</h2>
+<p>Each case is run on 4 datasets: friendly data (d0), and adversarial but legal data (d1–d3). A ratio below 1 means fewer cycles than the original. One wrong answer (DEFECT) fails the whole run.</p>
+<div class="chart-box"><canvas id="ratios"></canvas></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Trap it hides</th><th>Verdict</th><th class="num">Ratio</th></tr></thead>
+<tbody>
+<tr><td>01_selfjoin_max_null_keys</td><td>Self-join → GROUP for a per-group max</td><td>PASS</td><td class="num">1.000</td></tr>
+<tr><td>02_stats_fake_key_join</td><td>Drop a join because stats say <code>c_id</code> is unique and not NULL</td><td>PASS</td><td class="num">0.753</td></tr>
+<tr><td>03_check_bound_null_fold</td><td>Fold <code>l_disc &gt;= 0</code> to TRUE using <code>check [0, 0.5]</code></td><td>PASS</td><td class="num">1.000</td></tr>
+<tr><td>04_topk_dropped_tiebreak</td><td>SORT+SLICE → TOPK without the tie-breaker key</td><td>PASS</td><td class="num">0.862</td></tr>
+<tr><td>05_empty_gall_vs_group</td><td>GALL → GROUP on a constant</td><td>PASS</td><td class="num">0.891</td></tr>
+<tr><td>06_tautology_three_valued</td><td>Fold <code>x OR NOT x</code> to TRUE</td><td>PASS</td><td class="num">1.000</td></tr>
+<tr><td>07_div_hoisted_above_filter</td><td>Do the DIV on all rows, then filter</td><td>PASS</td><td class="num">0.859</td></tr>
+<tr><td>08_unicode_upper_left</td><td>LEFT before UPPER</td><td>PASS</td><td class="num">0.583</td></tr>
+<tr><td>09_parser_registers</td><td>Lower-case all register names</td><td>PASS</td><td class="num">0.225</td></tr>
+<tr><td>10_nullable_refs_join_elim</td><td>Drop the suppliers join (<code>p_supp</code> refs a key)</td><td>PASS</td><td class="num">0.660</td></tr>
+</tbody></table></div>
+
+<h2 id="untouched">The three cases left untouched</h2>
+<p>In all three, every existing pass (DCE, CSE, GATHER composition, filter-first, sort removal, join swap) failed to match anything, so the guard in <code>optimizer/main.py</code> printed the input unchanged. Staying correct was right; the cost was a missed speedup.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Tempting wrong rewrite</th><th>Legal rewrite</th><th class="num">Legal ratio</th></tr></thead>
+<tbody>
+<tr><td>06</td><td>Fold <code>OR(x, NOT x)</code> to TRUE, but it is NULL when <code>amt</code> is NULL, and <code>IDX</code> drops those rows</td><td><code>NOT ISNULL(amt)</code> as the filter</td><td class="num">0.866</td></tr>
+<tr><td>03</td><td>Fold both range checks via <code>check</code>. <code>l_disc</code> can be NULL, so <code>GE NULL, 0</code> is NULL</td><td>Fold only <code>GE l_qty, 1</code> (not_null + check [1, 500]), then <code>AND(TRUE, x)</code> → x</td><td class="num">0.727</td></tr>
+<tr><td>01</td><td>Self-join + GROUP → plain <code>GROUP k</code>, which keeps NULL keys that HJOIN drops (and <code>'  '</code> becomes a real <code>''</code> key)</td><td>Filter out NULL keys, then GROUP / GMAX / GID and gather the max back (output order is a multiset)</td><td class="num">0.364</td></tr>
+</tbody></table></div>
+<p class="meta">Legal ratio = geomean over d0–d3 of <code>cycles_legal / cycles_original</code> from each case's <code>case.json</code>.</p>
+
+<h2 id="projection">Estimated payoff</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th class="num">01</th><th class="num">03</th><th class="num">06</th><th class="num">Overall geomean</th><th>Estimated build time</th></tr></thead>
+<tbody>
+<tr><td>Now</td><td class="num">1.000</td><td class="num">1.000</td><td class="num">1.000</td><td class="num"><b>0.730</b></td><td>—</td></tr>
+<tr><td>Fix 03 + 06</td><td class="num">1.000</td><td class="num">0.727</td><td class="num">0.866</td><td class="num"><b>≈ 0.697</b></td><td>~30–40 min (shared pass + evaluator loop)</td></tr>
+<tr><td>Fix 03 + 06 + 01</td><td class="num">0.364</td><td class="num">0.727</td><td class="num">0.866</td><td class="num"><b>≈ 0.630</b></td><td>+~45–60 min (narrow 01)</td></tr>
+</tbody></table></div>
+<p class="note">These are estimates for this set. They assume our rewrites cost what <code>legal.mini</code> costs, and how much other programs gain depends on how often these patterns appear.</p>
+
+<h2 id="decisions">Decisions made</h2>
+<ul>
+  <li><b>No answer replay.</b> Making the optimizer recognise held-out programs, or output stored legal rewrites, would score well while proving nothing about programs it hasn't seen.</li>
+  <li><b>Prefer general rules.</b> Cases 03 and 06 are the same kind of problem: simplifying a filter that feeds <code>IDX</code> without breaking three-valued logic. One NULL-aware predicate pass covers both.</li>
+  <li><b>The evaluator speeds up testing but doesn't prove safety.</b> Rules still have to be sound by construction, using the schema constraints and never the stats.</li>
+  <li><b>Package without <code>.git</code>.</b> An early commit contains the one-pager PDF, so the full history ships as text in <code>git-history/</code> instead.</li>
+  <li><b>Held-out set excluded</b> from the package. This session's transcript does quote three of its cases, and <code>SUBMISSION.md</code> says so.</li>
+</ul>
+
+<h2 id="packaging">Packaging the submission</h2>
+<ul>
+  <li>Deleted regenerable clutter: <code>eval_out/</code> (66 MB), <code>__pycache__</code>, <code>.DS_Store</code>, ignored run outputs.</li>
+  <li>Untracked <code>minivm-onepager.pdf</code>; added <code>*.pdf</code> and <code>golden_heldout/</code> to <code>.gitignore</code>; fixed a dead link in <code>progress.md</code>.</li>
+  <li>Wrote <code>SUBMISSION.md</code> (a map from each requirement to its files), <code>FUTURE_PLAN.md</code> (a few days, unlimited compute) and <code>AI_USAGE.md</code> (≈ 51.9 credits for the whole project, broken down by model).</li>
+  <li>Re-exported all 5 main sessions and their subagents with <code>tools/export_session.py</code>; 6 embedded base64 file payloads were replaced with placeholders.</li>
+  <li>Commits <code>5058fcb</code> and <code>98bf7f9</code>. Built <code>../submission/minivm-submission.zip</code> (205 files) from the tracked files, and unzipped it to check that every file is text, with no <code>bin/</code>, no <code>.git</code> and no PDF.</li>
+</ul>
+
+<h2 id="ai-usage">AI models and usage</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Model</th><th class="num">Requests</th><th class="num">Input</th><th class="num">Cache read</th><th class="num">Cache write</th><th class="num">Output</th><th class="num">Credits</th></tr></thead>
+<tbody>
+<tr><td>claude-opus-5-5</td><td class="num">35</td><td class="num">90</td><td class="num">5,547,298</td><td class="num">747,555</td><td class="num">25,210</td><td class="num">2.943</td></tr>
+<tr><td>gemini-3.7-flash</td><td class="num">1</td><td class="num">418</td><td class="num">0</td><td class="num">0</td><td class="num">355</td><td class="num">0.001</td></tr>
+</tbody></table></div>
+<p class="meta">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, thread 82264130453 (this session's thread_id), from 02:54 UTC. The gemini row has no thread id; its timestamp (02:54:57) matches this session's start. ACCOUNT_USAGE lags by a few hours, so the turns after ~03:45 UTC are not counted yet. The total for this session will be somewhat higher.</p>
+
+<h2 id="next">Where we stopped and what's next</h2>
+<ol>
+  <li>Build the shared NULL-aware predicate pass (cases 03 and 06), checking each rewrite with <code>./evaluate</code> and the trap datasets.</li>
+  <li>Optionally, a narrow self-join → GROUP rule for case 01 that fires only on the exact chain.</li>
+  <li>Freeze a new held-out set before re-measuring, since three cases of this one have now been studied.</li>
+  <li>The longer-term plan is in <code>FUTURE_PLAN.md</code>.</li>
+</ol>
+
+<script src="/libs/chart.js@4.4.4/chart.umd.js"></script>
+<script>
+  (function () {
+    var labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
+    var now = [1.000, 0.753, 1.000, 0.862, 0.891, 1.000, 0.859, 0.583, 0.225, 0.660];
+    var legal = [0.364, null, 0.727, null, null, 0.866, null, null, null, null];
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var ink = dark ? '#e5e7eb' : '#1f2937', grid = dark ? '#374151' : '#e5e7eb';
+    new Chart(document.getElementById('ratios'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Now (cycles ratio)', data: now, backgroundColor: dark ? '#60a5fa' : '#2563eb' },
+          { label: 'Legal rewrite (untouched cases)', data: legal, backgroundColor: dark ? '#fbbf24' : '#f59e0b' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: ink } }, title: { display: true, text: 'Cycles ratio per case (lower is better)', color: ink } },
+        scales: {
+          x: { title: { display: true, text: 'Case', color: ink }, ticks: { color: ink }, grid: { color: grid } },
+          y: { min: 0, max: 1.05, ticks: { color: ink }, grid: { color: grid } }
+        }
+      }
+    });
+  })();
+</script>
+</body>
+</html>

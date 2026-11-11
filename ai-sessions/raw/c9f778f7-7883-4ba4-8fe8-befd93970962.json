@@ -8,13 +8,13 @@
  "session_accounts": [
   "THB83496"
  ],
- "lastMessageDate": 1794368298366,
- "lastUserMessageDate": 1794367857414,
+ "lastMessageDate": 1794371065077,
+ "lastUserMessageDate": 1794371065496,
  "isEmpty": false,
  "isExternal": false,
  "creationDate": 1794352221867,
  "session_break_suppressed": false,
- "requestCount": 8,
+ "requestCount": 2,
  "inputState": {
   "contrib": {
    "planModeEnabled": false,
@@ -53,7 +53,7 @@
   "dismissed_fqns": [],
   "fallback_model_id": "claude-opus-5-5"
  },
- "history_length": 62,
+ "history_length": 18,
  "last_account_locator": "SFPSCOGS-SKODI_AWS_DEMO",
  "stats": {
   "diff": {
@@ -65,14 +65,14 @@
  "thread": {
   "threadId": "82264130453",
   "accountHost": "sfpscogs-skodi-aws-demo.snowflakecomputing.com",
-  "lastSyncedHistoryLength": 62
+  "lastSyncedHistoryLength": 18
  },
  "responseMetadata": {
-  "assistant_message_id": 5391261993827218,
+  "assistant_message_id": 5391261993823650,
   "auto_router_selected": false,
-  "created_on": 1794368297788,
+  "created_on": 1794371228985,
   "orchestration_model": "claude-opus-5-5",
-  "run_id": "82264130453-5391261993816694",
+  "run_id": "82264130453-5391261993825982",
   "summary_revision": "",
   "thinking_effort": "low",
   "thread_id": 82264130453,
@@ -81,28 +81,28 @@
     {
      "context_window": 1000000,
      "input_tokens": {
-      "cache_read": 195957,
-      "cache_write": 636,
-      "total": 196595,
+      "cache_read": 259924,
+      "cache_write": 2476,
+      "total": 262402,
       "uncached": 2
      },
      "model_name": "claude-opus-5-5",
      "model_role": "orchestration",
      "output_tokens": {
-      "total": 467
+      "total": 584
      }
     }
    ]
   },
-  "user_message_id": 5391261993816694
+  "user_message_id": 5391261993825982
  },
  "titleIsAIGenerated": true,
  "initialLocation": "panel",
  "hasPendingEdits": true,
  "lastTurn": {
-  "requestId": "request_21221a76-dbde-4d39-94cf-7ebb45777a06",
-  "userMessageId": "c3809168",
-  "outcome": "running",
-  "historyLength": 29
+  "requestId": "request_6f1e243c-e64f-41fc-822f-80d7eadca98c",
+  "userMessageId": "6c518ada",
+  "outcome": "success",
+  "historyLength": 18
  }
 }
