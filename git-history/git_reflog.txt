@@ -1,3 +1,5 @@
+5058fcb HEAD@{2026-11-10 22:38:20 -0500}: commit: Package for submission: add SUBMISSION, FUTURE_PLAN, AI_USAGE; stop tracking the PDF; keep the held-out set out of the repo
+887ffa5 HEAD@{2026-11-10 21:29:10 -0500}: commit: Add session 2 (optimizer rules 1-4) to BUILD_SESSION.html; export its raw records, prompts and refreshed git history
 82fa409 HEAD@{2026-11-10 20:53:39 -0500}: commit: Rule 4: drop SORTs that only feed GALL totals; NLJOIN -> HJOIN when cheaper
 745fbb0 HEAD@{2026-11-10 20:50:52 -0500}: commit: Rule 3: drop SORTs over rows already in the table's stored (sorted) order
 8b66d0b HEAD@{2026-11-10 20:48:56 -0500}: commit: Rule 2: push element-wise work and FILL below row-picking GATHERs (filter first)

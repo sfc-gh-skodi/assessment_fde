@@ -2,7 +2,7 @@
 
 Session `c9f778f7-7883-4ba4-8fe8-befd93970962` · Golden Set Optimizer Report
 
-prompts: 7
+prompts: 8
 
 ## 1. 2026-11-11 02:54:37 UTC
 
@@ -56,3 +56,12 @@ if you Just use option 2 to improve 03, 06 how long will it take?
 ## 7. 2026-11-11 03:27:48 UTC
 
 what is the faster way to improve optimize based on the leanrings from the golden set. WHat is the current performance and waht will be the future performance (estimated) if we make these improvements
+
+## 8. 2026-11-11 03:30:57 UTC
+
+before we do any of this lets clean up uneccesary documents . Create ap apckage with all the details under WHAT TO SEND
+1. Everything behind your optimizer and evaluator: code, scripts, prompts, docs, logs, your agents' raw session files
+(not exports or summaries), and your git history (commit as you go). We look at it all to follow how you worked.
+D o n o t s e n d u s a n y b i n a r y fi l e s , including bin/minivm.
+2. A written plan: what would you do with a few days and unlimited compute and tokens?
+3. Which AI models you used, and roughly how many tokens or how much spend.

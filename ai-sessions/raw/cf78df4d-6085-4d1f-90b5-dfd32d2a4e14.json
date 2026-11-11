@@ -8,7 +8,7 @@
  "session_accounts": [
   "THB83496"
  ],
- "lastMessageDate": 1794349936573,
+ "lastMessageDate": 1794349926668,
  "lastUserMessageDate": 1794349926884,
  "isEmpty": false,
  "isExternal": false,
@@ -129,7 +129,7 @@
  "lastTurn": {
   "requestId": "request_f2fcf827-ad11-40bb-9cc8-f8e4f7015a63",
   "userMessageId": "aa76986f",
-  "outcome": "running",
-  "historyLength": 367
+  "outcome": "success",
+  "historyLength": 368
  }
 }

@@ -8,7 +8,7 @@
  "git_branch": "main",
  "secondary_working_directories": [],
  "created_at": "2026-11-10T21:40:35.107Z",
- "last_updated": "2026-11-10T22:26:21.616Z",
+ "last_updated": "2026-11-10T22:31:57.025Z",
  "last_request_id": "90c97868-3425-4c86-b265-bb1c482348a0",
  "session_accounts": [
   "THB83496"
@@ -17,6 +17,89 @@
  "permission_cache": {},
  "local_permission_grants": [],
  "history_length": 162,
+ "session_stats": {
+  "sessionStartTime": "2026-11-10T21:40:36.560Z",
+  "tools": {
+   "totalCalls": 117,
+   "totalSuccess": 113,
+   "totalFail": 4,
+   "totalDurationMs": 408251,
+   "byName": {
+    "enter_plan_mode": {
+     "count": 1,
+     "success": 1,
+     "fail": 0,
+     "durationMs": 1908
+    },
+    "bash": {
+     "count": 40,
+     "success": 36,
+     "fail": 4,
+     "durationMs": 216452
+    },
+    "read": {
+     "count": 40,
+     "success": 40,
+     "fail": 0,
+     "durationMs": 28892
+    },
+    "glob": {
+     "count": 7,
+     "success": 7,
+     "fail": 0,
+     "durationMs": 619
+    },
+    "direct_tool_calling": {
+     "count": 12,
+     "success": 12,
+     "fail": 0,
+     "durationMs": 66146
+    },
+    "grep": {
+     "count": 1,
+     "success": 1,
+     "fail": 0,
+     "durationMs": 9
+    },
+    "exit_plan_mode": {
+     "count": 1,
+     "success": 1,
+     "fail": 0,
+     "durationMs": 46580
+    },
+    "apply_patch": {
+     "count": 11,
+     "success": 11,
+     "fail": 0,
+     "durationMs": 47645
+    },
+    "skill": {
+     "count": 4,
+     "success": 4,
+     "fail": 0,
+     "durationMs": 0
+    }
+   }
+  },
+  "files": {
+   "totalLinesAdded": 617,
+   "totalLinesRemoved": 28
+  },
+  "subagents": {
+   "totalSpawned": 0,
+   "totalBackground": 0,
+   "byType": {}
+  },
+  "worktrees": []
+ },
+ "token_usage": {
+  "openai-gpt-5.4": {
+   "inputTokens": 12472825,
+   "outputTokens": 21576,
+   "cacheReadTokens": 9719040,
+   "cacheWriteTokens": 0
+  }
+ },
  "session_type": "main",
  "agent_mode": "standard",
  "thread": {
@@ -34,6 +117,10 @@
   {
    "afterMessageId": "5391261993819778",
    "text": "We finished reviewing the MiniVM plan and prototype, clarified tolerance rules, and exported session artifacts. The next action is deciding whether to commit remaining export files or start implementing code fixes."
+  },
+  {
+   "afterMessageId": "5391261993819790",
+   "text": "We are finalizing the MiniVM plan review and session documentation after adding model and token details to the HTML reports. Ready to commit and push the remaining session export changes whenever you want."
   }
  ]
 }
