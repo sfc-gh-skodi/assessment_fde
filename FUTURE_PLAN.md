@@ -49,22 +49,29 @@ Each stress case records size, optimizer time, cycles before and after, and whet
 
 ## 5. Failure-mode tests
 
-Each failure from `BUILD_PLAN.md` §10 gets its own test that must keep passing:
+Each failure from `BUILD_PLAN.md` §10 gets its own test that must keep passing, and a planned graceful exit: what the tool does when that failure happens anyway, so it never hands back a wrong answer or hangs.
 
-| What can go wrong | Test that catches it |
-|---|---|
-| A rewrite breaks NULL handling | NULL-heavy data and NULL-bug fakes |
-| A rewrite adds an error (e.g. divide by zero) | fakes that move a division above its filter |
-| Row order or ties get lost | order- and tie-aware comparison, and fakes that reverse or drop tie-breakers |
-| The evaluator is too lenient | the planted-bug fakes must all be caught |
-| The evaluator is too strict | the honest fakes must all pass |
-| Types get confused (BOOL vs INT, 1.0 vs 1.00) | strict typed comparison tests |
-| Stats get used for correctness | data that deliberately breaks the stats |
-| A rewrite blows the VM work limit | near-limit stress cases (section 3) |
-| The optimizer is too slow on huge programs | 20k-line stress programs with a time limit |
-| The evaluator runs past 2 minutes | wall time in every report, plus a watchdog |
-| Overfitting to the 8 examples | held-out generated programs and the rotating held-out set |
-| The same bug in both optimizer and evaluator | separate code, and a check that they share none |
+| What can go wrong | Test that catches it | Graceful exit |
+|---|---|---|
+| A rewrite breaks NULL handling | NULL-heavy data and NULL-bug fakes | The self-check fails, so that one rewrite is dropped and the rest are kept |
+| A rewrite adds an error (e.g. divide by zero) | fakes that move a division above its filter | The rewrite is dropped; if unsure, print the input unchanged |
+| Row order or ties get lost | order- and tie-aware comparison, and fakes that reverse or drop tie-breakers | Keep the original sort keys; drop the rewrite |
+| The evaluator is too lenient | the planted-bug fakes must all be caught | Block merges until the missed fake is caught again |
+| The evaluator is too strict | the honest fakes must all pass | Report the dispute with the smallest example instead of failing silently; a person decides |
+| Types get confused (BOOL vs INT, 1.0 vs 1.00) | strict typed comparison tests | Treat any type mismatch as a difference (never "close enough") |
+| Stats get used for correctness | data that deliberately breaks the stats | Rules may read stats only for cost; a lint check rejects any other use |
+| A rewrite blows the VM work limit | near-limit stress cases (section 3) | The cost check rejects it; if unsure, keep the original join or loop |
+| The optimizer is too slow on huge programs | 20k-line stress programs with a time limit | At the deadline, stop and print the best checked program so far, or the input |
+| The evaluator runs past 2 minutes | wall time in every report, plus a watchdog | The watchdog stops the run, reports what was checked so far, and marks the result "incomplete", never "pass" |
+| Overfitting to the 8 examples | held-out generated programs and the rotating held-out set | Rules that only help known programs are not merged |
+| The same bug in both optimizer and evaluator | separate code, and a check that they share none | Fail the build if shared code is found |
+
+**Exit rules that apply everywhere:**
+- **The optimizer always prints a valid program.** On any crash, bad input, missed deadline or failed self-check, it prints the input unchanged and exits 0. Slower is fine; wrong is not.
+- **Drop the smallest piece first.** If one rewrite fails its check, only that rewrite is dropped, not the whole optimization.
+- **The evaluator never reports a pass it didn't earn.** A timeout, a crash in `bin/minivm`, or a skipped dataset gives "incomplete" with a non-zero exit code, plus a list of what was and wasn't checked.
+- **Save the evidence.** Every fallback or incomplete run writes a small log (which rule, which program, why) so the nightly report can count fallbacks and spot rules that keep giving up.
+- **Agents stop instead of guessing.** If an agent can't tell from the docs whether a rule is safe, it leaves the rule out and raises the question for a person.
 
 ## 6. The three loops
 

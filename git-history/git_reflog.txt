@@ -1,3 +1,4 @@
+c0bf8c0 HEAD@{2026-11-10 23:30:04 -0500}: commit: Add TEST_SESSION.html; credit split by phase and the xhigh-thinking lesson; simpler future plan with scale, cost and failure-mode tests
 876f850 HEAD@{2026-11-10 23:24:38 -0500}: commit: SORT + SLICE -> TOPK with identical keys (SLICE moved onto sort positions first)
 f27c433 HEAD@{2026-11-10 23:21:51 -0500}: commit: Range folds from check bounds on not-null columns, plus TRUE/FALSE simplification
 a926e19 HEAD@{2026-11-10 23:13:28 -0500}: commit: Lookup-join detection from not-null refs to a whole key; second pass phase so it doesn't block pushdown
