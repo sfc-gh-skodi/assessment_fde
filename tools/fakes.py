@@ -673,6 +673,14 @@ MODES = {
     "b_drop_nulleq":  ("buggy", "removes NULLEQ from joins", lambda p, s, f: E(each(p, lambda o, a: o in TWO_DEST, lambda o, a: [o, [x for x in a if x.upper() != "NULLEQ"]]))),
     "b_nljoin":       ("buggy", "HJOIN -> NLJOIN (same pairs, but |L|*|R| work can exceed the VM limit)",
                        lambda p, s, f: E(each(p, lambda o, a: o == "HJOIN", lambda o, a: ["NLJOIN", a]))),
+    "b_countv":       ("buggy", "GCOUNTV g, s -> GCOUNT g (NULLs counted)",
+                       lambda p, s, f: E(each(p, lambda o, a: o == "GCOUNTV", lambda o, a: ["GCOUNT", a[:2]]))),
+    "b_and_3vl":      ("buggy", "AND a, b -> IF a, b, FALSE (NULL AND TRUE becomes FALSE; visible under NOT / in output)",
+                       lambda p, s, f: E(each(p, lambda o, a: o == "AND", lambda o, a: ["IF", [a[0], a[1], a[2], "FALSE"]]))),
+    "b_or_3vl":       ("buggy", "OR a, b -> IF a, TRUE, b (NULL OR FALSE becomes FALSE; visible under NOT / in output)",
+                       lambda p, s, f: E(each(p, lambda o, a: o == "OR", lambda o, a: ["IF", [a[0], a[1], "TRUE", a[2]]]))),
+    "b_gsum_nvl0":    ("buggy", "GSUM of a group with no non-NULL values gives 0 instead of NULL",
+                       lambda p, s, f: E(after_op(p, "GSUM", lambda d: [["NVL", [d, d, "0"]]]))),
     "b_hjoin_dedup":  ("buggy", "self-join on a key keeps only the first match per left row (assumes unique keys)", None),
 }
 

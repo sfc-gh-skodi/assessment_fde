@@ -189,6 +189,10 @@ class P:
 
     def filt(self, cols, k=None):
         m = self.conj(cols, k or self.rng.choice([1, 1, 2, 3]))
+        if self.rng.random() < 0.12:              # "exclude ...": NOT over a whole conjunction (3-valued)
+            n = self.fresh("x")
+            self.emit("NOT", n, m)
+            m = n
         i = self.fresh("w")
         self.emit("IDX", i, m)
         return self.gather_all(cols, i)
@@ -350,10 +354,32 @@ class P:
         if self.force in FINISH:
             kind = self.force
         out = rng.sample(cols, min(len(cols), rng.randint(1, 4)))
-        if kind == "proj":
+        if kind == "logic3":               # 3-valued AND / OR / NOT visible in the output
+            nb = [c for c in cols if c.nullable and c.type != "BOOL"] or cols
+            c = rng.choice([x for x in nb if x.type in ("INT", "NUM", "STR", "DATE")] or nb)
+            lit, _ = self.literal_for(c)
+            m1 = self.fresh("f")                  # NULL wherever c is NULL
+            self.emit(rng.choice(["EQ", "NE", "GT", "LE"]), m1, c.reg, lit)
+            m2 = self.predicate(cols)
+            a, o, n = self.fresh("and"), self.fresh("or"), self.fresh("nand")
+            self.emit("AND", a, m1, m2)
+            self.emit("OR", o, m1, m2)
+            self.emit("NOT", n, a)
+            self.emit("OUT", *([c.reg for c in out[:2]] + [a, o, n]))
+        elif kind == "countv":             # non-NULL count of a nullable column per group
+            nb = [c for c in cols if c.nullable and c.type != "BOOL"] or cols
+            gk = rng.choice([c for c in cols if c.type != "BOOL"])
+            g, f, key, cv, cn = self.fresh("g"), self.fresh("f"), self.fresh("key"), self.fresh("cv"), self.fresh("n")
+            self.emit("GROUP", g, gk.reg)
+            self.emit("GFIRST", f, g)
+            self.emit("GATHER", key, gk.reg, f)
+            self.emit("GCOUNTV", cv, g, rng.choice(nb).reg)
+            self.emit("GCOUNT", cn, g)
+            self.emit("OUT", key, cv, cn)
+        elif kind == "proj":
             self.emit("OUT", *[c.reg for c in out])
         elif kind == "proj_bool":
-            m = self.predicate2(cols)
+            m = self.conj(cols, rng.choice([1, 2, 2, 3]))
             self.emit("OUT", *([c.reg for c in out[:2]] + [m]))
         elif kind == "topk":
             keys = self.sort_keys(cols, rng.choice([1, 2]))
@@ -466,10 +492,10 @@ class P:
         return "\n".join(self.lines) + "\n"
 
 
-FINISH = ("proj", "sort", "topn", "group", "gall", "topk", "topn_filter", "proj_bool")
+FINISH = ("proj", "sort", "topn", "group", "gall", "topk", "topn_filter", "proj_bool", "logic3", "countv")
 # idioms a corpus cycles through so each one is covered under every seed
-IDIOMS = ("topn_filter", "notnull_filter", "guarded_div", "self_join_nulleq", "is_null", "topk", "gall",
-          "group", "proj_bool", "sorted_sort", "topn", None)
+IDIOMS = ("topn_filter", "logic3", "countv", "notnull_filter", "guarded_div", "self_join_nulleq", "is_null",
+          "topk", "gall", "group", "proj_bool", "sorted_sort", "topn", None)
 
 
 def gen_program(schema, rng, force=None):

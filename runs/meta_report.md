@@ -57,3 +57,14 @@ buggy: caught 36/36, missed 0 | honest: ok 17/17, false alarms 0 | seeds 1 | qui
 | `b_drop_nulleq` | flag | CAUGHT | 17 | 1028 | 28.0 | removes NULLEQ from joins |
 | `b_nljoin` | flag | CAUGHT | 1 | 1028 | 25.3 | HJOIN -> NLJOIN (same pairs, but |L|*|R| work can exceed the VM limit) |
 | `b_hjoin_dedup` | flag | CAUGHT | 66 | 1028 | 22.8 | self-join on a key keeps only the first match per left row (assumes unique keys) |
+
+## Addendum (iteration 7): NULL-logic fakes, seeds 1,2,3, quick
+
+| Fake | Expected | Result | Defects (per seed) | What it does |
+|---|---|---|---|---|
+| `b_countv` | flag | CAUGHT | 8/34/16 | GCOUNTV g, s -> GCOUNT g (NULLs counted) |
+| `b_and_3vl` | flag | CAUGHT | 7/8/6 | AND a, b -> IF a, b, FALSE |
+| `b_or_3vl` | flag | CAUGHT | 8/13/6 | OR a, b -> IF a, TRUE, b |
+| `b_gsum_nvl0` | flag | CAUGHT | 60/60/70 | GSUM of an all-NULL group gives 0 instead of NULL |
+
+The 17 honest fakes were not re-run after this iteration's generator change; the table above them predates it.

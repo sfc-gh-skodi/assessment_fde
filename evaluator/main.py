@@ -60,7 +60,7 @@ def build_corpus(work, seed, quick):
     fixed = sorted(glob.glob(os.path.join(EX, "programs", "*.mini")))
     fixed += sorted(glob.glob(os.path.join(REPO, "tests", "cases", "**", "*.mini"), recursive=True))
     fixed += sorted(glob.glob(os.path.join(REPO, "tests", "regressions", "*.mini")))
-    n_gen = 24 if quick else 60
+    n_gen = 30 if quick else 60
     sizes = (6, 5, 2, 0) if quick else (14, 7, 3, 1)
     schemas = [("example", ex_schema, fixed, [os.path.join(EX, "data.json")])]
     for k in range(0 if quick else 2):
