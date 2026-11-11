@@ -17,6 +17,6 @@ ELI5 = "explain like I'm 5". Metrics: **defects** (wrong answers found by `./eva
 | 7 | 01:53 | optimizer loop | We stop sorting things when we only add them up or count them afterwards, because the total is the same in any order; and we use the fast way to match rows (hash join) when the price list says it is cheaper. | bench 0 · eval s1 0 | suite 1.30× (examples 1.38× · easy 1.64× · medium 1.11× · complex 1.22× · schema2 1.17×); evaluate 1.75× | bench 5s · eval 37s · max opt 0.07s | 3892 checks | A sort can only be dropped if every value made from its order flows only into whole-table totals (GSUM, GCOUNT, GCOUNTV over GALL) and is never mixed with unsorted rows; GMIN/GMAX are excluded because they keep the first of equal values. HJOIN and NLJOIN give identical results and errors, so choosing between them is purely a cost decision from the price list. |
 
 ## Iteration detail logs
-- Optimizer iterations: `runs/optimizer_iterations.md`
+- Optimizer iterations: the "optimizer loop" rows above, plus one commit per rule (`git-history/git_log.txt`)
 - Evaluator iterations: `runs/evaluator_iterations.md`
 - Test suite and baselines: `runs/testsuite_iterations.md`

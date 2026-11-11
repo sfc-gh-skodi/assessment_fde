@@ -10,3 +10,6 @@ tests/data/
 tests/stress/
 runs/*_last*.json
 runs/loop.jsonl
+minivm-onepager.pdf
+*.pdf
+golden_heldout/

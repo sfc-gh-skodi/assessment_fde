@@ -1,0 +1,108 @@
+{
+ "title": "Golden Set Optimizer Report",
+ "session_id": "c9f778f7-7883-4ba4-8fe8-befd93970962",
+ "working_directory": "/Users/skodi/Desktop/take-home-assessment",
+ "history": [],
+ "summarization": [],
+ "connection_name": null,
+ "session_accounts": [
+  "THB83496"
+ ],
+ "lastMessageDate": 1794367688190,
+ "lastUserMessageDate": 1794367668617,
+ "isEmpty": false,
+ "isExternal": false,
+ "creationDate": 1794352221867,
+ "session_break_suppressed": false,
+ "requestCount": 7,
+ "inputState": {
+  "contrib": {
+   "planModeEnabled": false,
+   "chatDynamicVariableModel": []
+  },
+  "attachments": [],
+  "mode": {
+   "id": "agent",
+   "kind": "agent"
+  },
+  "selectedCortexModelId": "claude-opus-5-5",
+  "selectedCortexModelIsExplicit": false,
+  "selectedThinkingEffort": "",
+  "inputText": "",
+  "selections": [
+   {
+    "startLineNumber": 1,
+    "startColumn": 1,
+    "endLineNumber": 1,
+    "endColumn": 1,
+    "selectionStartLineNumber": 1,
+    "selectionStartColumn": 1,
+    "positionLineNumber": 1,
+    "positionColumn": 1
+   }
+  ]
+ },
+ "managed_profile": {
+  "version": 1,
+  "selection": "unresolved",
+  "scope": {
+   "connection": "skodi-demo",
+   "account": "SFPSCOGS-SKODI_AWS_DEMO",
+   "user": "SKODI"
+  },
+  "dismissed_fqns": [],
+  "fallback_model_id": "claude-opus-5-5"
+ },
+ "history_length": 28,
+ "last_account_locator": "SFPSCOGS-SKODI_AWS_DEMO",
+ "stats": {
+  "diff": {
+   "fileCount": 0,
+   "added": 0,
+   "removed": 0
+  }
+ },
+ "thread": {
+  "threadId": "82264130453",
+  "accountHost": "sfpscogs-skodi-aws-demo.snowflakecomputing.com",
+  "lastSyncedHistoryLength": 28
+ },
+ "responseMetadata": {
+  "assistant_message_id": 5391261993823566,
+  "auto_router_selected": false,
+  "created_on": 1794367688019,
+  "orchestration_model": "claude-opus-5-5",
+  "run_id": "82264130453-5391261993823902",
+  "summary_revision": "",
+  "thinking_effort": "low",
+  "thread_id": 82264130453,
+  "usage": {
+   "tokens_consumed": [
+    {
+     "context_window": 1000000,
+     "input_tokens": {
+      "cache_read": 160745,
+      "cache_write": 1733,
+      "total": 162482,
+      "uncached": 4
+     },
+     "model_name": "claude-opus-5-5",
+     "model_role": "orchestration",
+     "output_tokens": {
+      "total": 1327
+     }
+    }
+   ]
+  },
+  "user_message_id": 5391261993823902
+ },
+ "titleIsAIGenerated": true,
+ "initialLocation": "panel",
+ "hasPendingEdits": false,
+ "lastTurn": {
+  "requestId": "request_adad5053-0908-4d79-a950-e6ced7fa6bb2",
+  "userMessageId": "9f3bdfa1",
+  "outcome": "success",
+  "historyLength": 28
+ }
+}
