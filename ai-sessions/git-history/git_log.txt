@@ -1,3 +1,41 @@
+commit 2bb596571c2ebe4e5d0b326719c4f217f25de595
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 07:40:05 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 07:40:05 2026 -0500
+
+    Future plan: top-down by goal, evaluator-first priorities, targets and milestones
+    
+    Goal: faster on unseen data, never wrong. Targets: held-out geomean under 0.5 on a
+    fresh set; 100% of known traps caught. Open question for the team: precision vs
+    recall (we have optimized for precision).
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ minivm-takehome/docs/4.FUTURE_PLAN.md | 156 ++++++++++++++++++++++++----------
+ 1 file changed, 110 insertions(+), 46 deletions(-)
+
+commit fe026d9fc0df154abf004076eac777be70965827
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 07:36:01 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 07:36:01 2026 -0500
+
+    Session exporter: detect renames in the patch history
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ ai-sessions/git-history/git_log.txt                | 229 +++++++++++++++++++++
+ ai-sessions/git-history/git_reflog.txt             |   3 +
+ ...778f7-7883-4ba4-8fe8-befd93970962.history.jsonl |  33 +++
+ .../raw/c9f778f7-7883-4ba4-8fe8-befd93970962.json  |  22 +-
+ minivm-takehome/tools/export_session.py            |   2 +-
+ 5 files changed, 277 insertions(+), 12 deletions(-)
+
 commit ca9a641ac5e9d19045e721a2e0b46cac4847050a
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Wed Nov 11 07:35:16 2026 -0500

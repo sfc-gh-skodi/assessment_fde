@@ -29,8 +29,8 @@
       { "id": "packaging", "title": "Packaging the submission",
         "dataSources": [{ "type": "file", "path": "git log 887ffa5..98bf7f9" }, { "type": "file", "path": "SUBMISSION.md" }] },
       { "id": "ai-usage", "title": "AI models and usage",
-        "dataSources": [{ "type": "query", "sql": "SELECT h.THREAD_ID, LOWER(h.INTERFACE) iface, f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),3) credits, MIN(h.USAGE_TIME) first_use, MAX(h.USAGE_TIME) last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND h.USAGE_TIME >= '2026-11-11 02:50:00 +0000' GROUP BY 1,2,3 ORDER BY credits DESC" }],
-        "producerNotes": "Queried 2026-11-11 ~04:10 UTC. This session is thread 82264130453 (thread_id in its local session file). Thread 82264130449 (from 03:16) matches session d65688c6 being resumed, so it is excluded. ACCOUNT_USAGE lags, so the last turns are missing." },
+        "dataSources": [{ "type": "query", "sql": "SELECT h.THREAD_ID, LOWER(h.INTERFACE) iface, f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),3) credits, MIN(h.USAGE_TIME) first_use, MAX(h.USAGE_TIME) last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND h.THREAD_ID = 82264130453 GROUP BY 1,2,3 ORDER BY credits DESC" }],
+        "producerNotes": "Queried 2026-11-11 ~12:45 UTC, filtered on THREAD_ID = 82264130453 (this session). ACCOUNT_USAGE lags, so the last turns may be missing." },
       { "id": "next", "title": "Where we stopped and what's next", "dataSources": [{ "type": "file", "path": "FUTURE_PLAN.md" }] }
     ]
   }
@@ -66,10 +66,10 @@
 <body>
 
 <h1>Test session: held-out check, analysis and packaging</h1>
-<p class="meta">Session <code>c9f778f7-7883-4ba4-8fe8-befd93970962</code> · Cortex Code Desktop · 2026-11-11 02:54 → ~04:10 UTC · no subagents · 9 user prompts · 2 commits (<code>5058fcb</code>, <code>98bf7f9</code>) · ≈ 2.9 credits</p>
+<p class="meta">Session <code>c9f778f7-7883-4ba4-8fe8-befd93970962</code> · Cortex Code Desktop · 2026-11-11 02:54 → 12:40 UTC · no subagents · 23 user prompts · ≈ 13.0 credits</p>
 
 <h2 id="overview">The session in one paragraph</h2>
-<p>The optimizer from the build sessions was run once on the 10-case held-out trap set, which was built outside the build sessions. It got <b>10/10 correct</b> with a geomean cycles ratio of <b>0.730</b>. This session explained the report, then looked at why three cases came back at 1.000. In all three the optimizer printed the input unchanged, because no existing pass matched. For each case we worked out a cheaper rewrite that is still legal. We then estimated how long each would take to build and what it would do to the overall number. We decided not to take the tempting shortcut of having the optimizer replay known answers, because that would overfit to the held-out set. No optimizer code was changed in this session. It ended by cleaning the repo and building the submission package.</p>
+<p>The optimizer from the build sessions was run once on the 10-case held-out trap set, which was built outside the build sessions. It got <b>10/10 correct</b> with a geomean cycles ratio of <b>0.730</b>. This session explained the report, then looked at why three cases came back at 1.000. In all three the optimizer printed the input unchanged, because no existing pass matched. For each case we worked out a cheaper rewrite that is still legal. We then estimated how long each would take to build and what it would do to the overall number. We decided not to take the tempting shortcut of having the optimizer replay known answers, because that would overfit to the held-out set. Later in the session we built those rewrites as rules 9–11, each with a buggy twin. That brought the held-out ratio to 0.602 with 10/10 still correct, and the meta-eval to 44/44 bugs caught with 0 false alarms. The session also packaged the submission, followed the repo reorganisation, and fixed the tool paths it broke.</p>
 
 <div class="cards">
   <div class="card">Correct on held-out<b>10 / 10</b></div>
@@ -154,10 +154,9 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Model</th><th class="num">Requests</th><th class="num">Input</th><th class="num">Cache read</th><th class="num">Cache write</th><th class="num">Output</th><th class="num">Credits</th></tr></thead>
 <tbody>
-<tr><td>claude-opus-5-5</td><td class="num">35</td><td class="num">90</td><td class="num">5,547,298</td><td class="num">747,555</td><td class="num">25,210</td><td class="num">2.943</td></tr>
-<tr><td>gemini-3.7-flash</td><td class="num">1</td><td class="num">418</td><td class="num">0</td><td class="num">0</td><td class="num">355</td><td class="num">0.001</td></tr>
+<tr><td>claude-opus-5-5</td><td class="num">163</td><td class="num">376</td><td class="num">46,654,307</td><td class="num">2,312,051</td><td class="num">136,650</td><td class="num">12.994</td></tr>
 </tbody></table></div>
-<p class="meta">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, thread 82264130453 (this session's thread_id), from 02:54 UTC. The gemini row has no thread id; its timestamp (02:54:57) matches this session's start. ACCOUNT_USAGE lags by a few hours, so the turns after ~03:45 UTC are not counted yet. The total for this session will be somewhat higher.</p>
+<p class="meta">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, thread 82264130453 (this session), queried 2026-11-11 ~12:45 UTC. ACCOUNT_USAGE lags, so the last turns may be missing. Per-session detail for this session and <code>d65688c6</code>: <code>ai-sessions/SESSION_USAGE.md</code>.</p>
 
 <h2 id="next">Where we stopped and what's next</h2>
 <ol>

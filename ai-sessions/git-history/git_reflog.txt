@@ -1,3 +1,5 @@
+2bb5965 HEAD@{2026-11-11 07:40:05 -0500}: commit: Future plan: top-down by goal, evaluator-first priorities, targets and milestones
+fe026d9 HEAD@{2026-11-11 07:36:01 -0500}: commit: Session exporter: detect renames in the patch history
 ca9a641 HEAD@{2026-11-11 07:35:16 -0500}: commit: Fix paths after the reorganisation; keep the patch history out of the repo
 12eef6e HEAD@{2026-11-11 07:34:03 -0500}: commit: BUILD_SESSION.html: add round 3 (register reuse, filter pushdown, lookup joins, range folds, SORT+SLICE->TOPK)
 da31d6c HEAD@{2026-11-11 07:29:07 -0500}: commit: Reorganise into minivm-takehome/ and ai-sessions/; restore prompts under ai-sessions/prompts

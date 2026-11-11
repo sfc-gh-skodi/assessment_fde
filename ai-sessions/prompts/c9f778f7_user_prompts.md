@@ -2,7 +2,7 @@
 
 Session `c9f778f7-7883-4ba4-8fe8-befd93970962` · Golden Set Optimizer Report
 
-prompts: 21
+prompts: 23
 
 ## 1. 2026-11-11 02:54:37 UTC
 
@@ -142,3 +142,11 @@ The session hook may still call the old exporter path.
 ## 21. 2026-11-11 12:30:49 UTC
 
 Commit only git_log.txt and git_reflog.txt, and keep the patch file in the zip only. and do the rest to dos
+
+## 22. 2026-11-11 12:38:27 UTC
+
+Also update the future plan document such that it is structure in a top down fashoin with key themes and prioritise order of action to improve the optimizer and evlauator. THe overall idea is to make the evalutor strong and strong so the optimizer build gets easier. Our goal is : optimize programs that run faster on data we've never seen and never give a wrong answer. Confirm with the team if they care more about precision or recall. In this case we have optimized for precision.  Another goal : try to get held out score to under 0.5 geomean and ensure 100% of the known tricks/traps are caught by the evaluator .
+
+## 23. 2026-11-11 12:42:33 UTC
+
+Okay ensure you dump all the prompts, raw session files,gti history, models used, rough usage, tokens and spend into the ai-sessions folder for this session and the MiniVM Program Optimizer session
