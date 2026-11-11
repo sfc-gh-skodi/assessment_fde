@@ -8,6 +8,8 @@ errors, anything goes).
   cse  common-subexpression elimination: an identical (op, operands) computed twice,
        e.g. the same column loaded twice, is computed once and reused
 """
+from .analyze import ELEMENTWISE, analyze
+from .cost import instr_cost
 from .ir import Instr, key_reg, kind
 
 
@@ -120,7 +122,88 @@ def gather_chain(prog, schema=None):
     return out, changed
 
 
-PASSES = [gather_chain, cse, dce]
+def _uses(prog):
+    """-> {reg: [(instr, operand position)]}"""
+    u = {}
+    for ins in prog:
+        for k, t in enumerate(ins.srcs):
+            if kind(t) in ("reg", "key"):
+                u.setdefault(key_reg(t), []).append((ins, k))
+    return u
+
+
+def _injective(prog):
+    """Position columns that name each row at most once (no repeats): IDX, IOTA,
+    SORT, TOPK, GFIRST, and SLICE / GATHER built only from those. Join outputs
+    can repeat rows, so they are left out."""
+    inj = set()
+    for ins in prog:
+        if ins.op in ("IDX", "IOTA", "SORT", "TOPK", "GFIRST"):
+            inj.add(ins.dests[0])
+        elif ins.op == "SLICE" and ins.srcs[0] in inj:
+            inj.add(ins.dests[0])
+        elif ins.op == "GATHER" and ins.srcs[0] in inj and ins.srcs[1] in inj:
+            inj.add(ins.dests[0])
+    return inj
+
+
+def filter_first(prog, schema=None):
+    """Rule 2: GATHER(E(a, b, ...), i) -> E(GATHER(a, i), GATHER(b, i), ...) for an
+    element-wise E (or FILL) whose only uses are GATHERs by the same index i.
+
+    Element-wise means row k of the result depends only on row k of the operands,
+    so both forms give the same values in the same order. The new form runs E only
+    on the rows i picks, a subset of the rows it ran on before, so it can't add an
+    error (a DIV by zero on a dropped row goes away; none appears). Only when i
+    names each row at most once, and the price list says it's cheaper."""
+    if schema is None:
+        return prog, False
+    info = analyze(prog, schema)
+    uses, inj, new = _uses(prog), _injective(prog), _fresh(prog)
+    push = {}                                    # E dest -> index i
+    for ins in prog:
+        if not (ins.op in ELEMENTWISE or ins.op == "FILL") or len(ins.dests) != 1:
+            continue
+        e = ins.dests[0]
+        us = uses.get(e, [])
+        if not us or any(u.op != "GATHER" or k != 0 for u, k in us):
+            continue
+        idx = {u.srcs[1] for u, k in us}
+        if len(idx) != 1:
+            continue
+        i = idx.pop()
+        if i not in inj or i not in info or e not in info:
+            continue
+        regs = {t for t in ins.srcs if kind(t) == "reg"}
+        n, m = max(info[e].rows, 1.0), info[i].rows
+        ce = instr_cost(ins, info)
+        old = ce + (4 + m)
+        newc = len(regs) * (4 + m) + 4 + (ce - 4) * m / n
+        if newc < old:
+            push[e] = i
+    if not push:
+        return prog, False
+    defs = _defs(prog)
+    out = []
+    for ins in prog:
+        if ins.op == "GATHER" and ins.srcs[0] in push and push[ins.srcs[0]] == ins.srcs[1]:
+            e_ins, i = defs[ins.srcs[0]], ins.srcs[1]
+            if e_ins.op == "FILL":
+                out.append(Instr("FILL", ins.dests, [e_ins.srcs[0], i]))
+                continue
+            sub = {}
+            for t in e_ins.srcs:
+                if kind(t) == "reg" and t not in sub:
+                    sub[t] = new()
+                    out.append(Instr("GATHER", [sub[t]], [t, i]))
+            out.append(Instr(e_ins.op, ins.dests, [sub.get(t, t) if kind(t) == "reg" else t
+                                                   for t in e_ins.srcs]))
+            continue
+        out.append(ins)
+    return out, True
+
+
+PASSES = [gather_chain, filter_first, cse, dce]
 
 
 def run(prog, schema=None, deadline=None):
