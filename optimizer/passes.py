@@ -8,8 +8,8 @@ errors, anything goes).
   cse  common-subexpression elimination: an identical (op, operands) computed twice,
        e.g. the same column loaded twice, is computed once and reused
 """
-from .analyze import ELEMENTWISE, analyze
-from .cost import instr_cost
+from .analyze import ELEMENTWISE, analyze, lit_type
+from .cost import estimate, instr_cost
 from .ir import Instr, key_reg, kind
 
 
@@ -309,7 +309,213 @@ def pointless(prog, schema=None):
     return out, changed
 
 
-PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless]   # cheap clean-up first, so the analysis-based rules see a smaller program
+CMP_OPS = {"EQ", "NE", "LT", "LE", "GT", "GE", "IS"}
+
+
+def _cannot_error(ins, info, made):
+    """True if this element-wise op can't error on any row, whatever the data:
+    comparisons of comparable types; AND / OR / NOT of BOOLs; ISNULL. Only types we
+    are sure of count: stored columns (schema type) and BOOLs computed by the
+    predicate itself (`made`); analyze's guesses for other computed columns don't."""
+    def ty(t):
+        if kind(t) == "lit":
+            return lit_type(t), t == "NULL"
+        r = info.get(t)
+        if r is None:
+            return None, False
+        if t in made or r.column:
+            return r.type, False
+        return None, False
+
+    ts = [ty(t) for t in ins.srcs]
+    if ins.op == "ISNULL":
+        return True
+    if ins.op in CMP_OPS and len(ts) == 2:
+        known = [t for t, isnull in ts if not isnull]
+        if any(t is None for t in known):
+            return False
+        num = {"INT", "NUM"}
+        return len(known) < 2 or known[0] == known[1] or (known[0] in num and known[1] in num)
+    if ins.op in ("AND", "OR", "NOT"):
+        return all(t == "BOOL" or isnull for t, isnull in ts)
+    return False
+
+
+def _pred_tree(c, side, side_dom, defs, info, order, need_safe):
+    """The element-wise ops computing c from leaves GATHER(x, side) with x on the
+    side's rows. -> (ops in program order, {leaf: x}) or None."""
+    nodes, leaves, stack = [], {}, [c]
+    seen = set()
+    while stack:
+        r = stack.pop()
+        if r in seen:
+            continue
+        seen.add(r)
+        d = defs.get(r)
+        if d is None:
+            return None
+        if d.op == "GATHER" and d.srcs[1] == side and kind(d.srcs[0]) == "reg":
+            xi = info.get(d.srcs[0])
+            if xi is None or xi.kind != "col" or xi.domain is None or xi.domain != side_dom:
+                return None
+            leaves[r] = d.srcs[0]
+            continue
+        if d.op not in ELEMENTWISE or len(nodes) > 64:
+            return None
+        nodes.append(d)
+        stack.extend(t for t in d.srcs if kind(t) == "reg")
+    nodes.sort(key=lambda ins: order[id(ins)])
+    if need_safe:
+        made = set()
+        for ins in nodes:
+            if not _cannot_error(ins, info, made):
+                return None
+            made.add(ins.dests[0])
+    return nodes, leaves
+
+
+def _pushdown_one(prog, k, info, defs, uses, order, new):
+    """Try to move the filter IDX at prog[k] below the SORT / join it reads through.
+    -> new program or None."""
+    fi = prog[k]
+    f, c = fi.dests[0], fi.srcs[0]
+    if kind(c) != "reg":
+        return None
+    fuses = uses.get(f, [])
+    if not fuses or any(u.op != "GATHER" or j != 1 for u, j in fuses):
+        return None
+    # what each use reads through f: GATHER(P, f) or GATHER(GATHER(x, P), f)
+    through = []
+    for u, _ in fuses:
+        z = u.srcs[0]
+        dz = defs.get(z)
+        if dz is not None and dz.op in ("SORT", "HJOIN", "NLJOIN"):
+            through.append((u, None, z))
+        elif dz is not None and dz.op == "GATHER" and kind(dz.srcs[0]) == "reg":
+            through.append((u, dz.srcs[0], dz.srcs[1]))
+        else:
+            return None
+    src_ins = {id(defs[P]): defs[P] for _, _, P in through if P in defs}
+    if len(src_ins) != 1 or len(through) != sum(P in defs for _, _, P in through):
+        return None
+    S = next(iter(src_ins.values()))
+    block, Q = [], {}
+    if S.op == "SORT":
+        p = S.dests[0]
+        tree = _pred_tree(c, p, info[p].into, defs, info, order, need_safe=False)
+        if tree is None:
+            return None
+        nodes, leaves = tree
+        keys = S.srcs
+        kdom = {info[key_reg(t)].domain for t in keys if key_reg(t) in info}
+        if len(kdom) != 1 or kdom != {info[p].into}:
+            return None
+    elif S.op in ("HJOIN", "NLJOIN") and S.dests[0] != S.dests[1]:
+        li, ri = S.dests
+        sides = []
+        for side in (li, ri):
+            t = _pred_tree(c, side, info[side].into, defs, info, order, need_safe=True)
+            if t is not None and t[1]:
+                sides.append((side, t))
+        if len(sides) != 1:
+            return None
+        side, (nodes, leaves) = sides[0]
+    else:
+        return None
+    if not leaves:
+        return None
+    # c0: the same predicate on the source rows
+    sub = dict(leaves)
+    for ins in nodes:
+        d = new()
+        block.append(Instr(ins.op, [d], [sub.get(t, t) if kind(t) == "reg" else t for t in ins.srcs]))
+        sub[ins.dests[0]] = d
+    c0 = sub[c]
+    f0 = new()
+    block.append(Instr("IDX", [f0], [c0]))
+    if S.op == "SORT":
+        nk = []
+        for t in S.srcs:
+            r = key_reg(t)
+            g = new()
+            block.append(Instr("GATHER", [g], [r, f0]))
+            nk.append(g + t[len(r):])
+        p2, q = new(), new()
+        block.append(Instr("SORT", [p2], nk))
+        block.append(Instr("GATHER", [q], [f0, p2]))
+        Q[S.dests[0]] = q
+    else:
+        li, ri = S.dests
+        lk, rk = S.srcs[0], S.srcs[1]
+        g, l2, r2, back = new(), new(), new(), new()
+        if side == li:
+            block.append(Instr("GATHER", [g], [lk, f0]))
+            block.append(Instr(S.op, [l2, r2], [g, rk] + S.srcs[2:]))
+            block.append(Instr("GATHER", [back], [f0, l2]))
+            Q[li], Q[ri] = back, r2
+        else:
+            block.append(Instr("GATHER", [g], [rk, f0]))
+            block.append(Instr(S.op, [l2, r2], [lk, g] + S.srcs[2:]))
+            block.append(Instr("GATHER", [back], [f0, r2]))
+            Q[li], Q[ri] = l2, back
+    repl = {}
+    for u, x, P in through:
+        if x is None:
+            repl[id(u)] = ("sub", u.dests[0], Q[P])
+        else:
+            repl[id(u)] = ("gather", Instr("GATHER", u.dests, [x, Q[P]]))
+    out, ren = [], {}
+    for n, ins in enumerate(prog):
+        r = repl.get(id(ins))
+        if r is not None and r[0] == "sub":
+            ren[r[1]] = r[2]
+            continue
+        if r is not None:
+            ins = r[1]
+        out.append(Instr(ins.op, ins.dests, [_rename(t, ren) for t in ins.srcs]))
+        if n == k:
+            out.extend(block)
+    return out
+
+
+def filter_pushdown(prog, schema=None):
+    """Rule 5: filter before a SORT or a join instead of after it.
+
+    IDX f, c, where c is element-wise in columns read through one SORT (or one side
+    of a join), and every use of f is a GATHER through it. The filter moves to the
+    source rows: f0 = IDX c0, with c0 the same predicate on the unsorted / unjoined
+    rows; then the SORT (or join) runs on only the kept rows.
+      SORT: a stable sort of the kept rows is the kept rows of the stable sort (ties
+            stay in stored order either way); c0 sees exactly the rows c saw.
+      join: pairs are ordered by left then right row, and filtering one side keeps
+            that order. c0 also sees rows the join never matched, so only predicates
+            that can't error on any row are moved (_cannot_error).
+    Each rewrite is kept only if the program's estimated cost drops."""
+    if schema is None:
+        return prog, False
+    info = analyze(prog, schema)
+    defs, uses, new = _defs(prog), _uses(prog), _fresh(prog)
+    order = {id(ins): n for n, ins in enumerate(prog)}
+    before = None
+    for k, ins in enumerate(prog):
+        if ins.op != "IDX":
+            continue
+        cand = _pushdown_one(prog, k, info, defs, uses, order, new)
+        if cand is None:
+            continue
+        cand, _ = dce(cse(cand)[0])
+        try:
+            if before is None:
+                before = estimate(prog, schema, info)
+            if estimate(cand, schema) < before:
+                return cand, True
+        except Exception:
+            continue
+    return prog, False
+
+
+# cheap clean-up first, so the analysis-based rules see a smaller program
+PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown]
 
 
 def run(prog, schema=None, deadline=None):
