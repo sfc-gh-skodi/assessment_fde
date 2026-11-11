@@ -10,7 +10,7 @@ python3 optimizer_agent/check.py | tail -1
 echo "== tricky_checks.py: comparator / order / VM rules"
 python3 evaluator_agent/tricky_checks.py | tail -1
 echo "== eval-proto.py on identity, hand-optimized, known-bad optimizers"
-for o in ../minivm-takehome/optimize optimizer_agent/hand_opt.sh optimizer_agent/naive_opt.sh; do
+for o in ../tools/identity_opt.sh optimizer_agent/hand_opt.sh optimizer_agent/naive_opt.sh; do
   printf '%-34s ' "$o"; python3 evaluator_agent/eval-proto.py "$o" --quiet | tail -1 || true
 done
 echo "== meta_eval.py: evaluator vs 19 fake optimizers"

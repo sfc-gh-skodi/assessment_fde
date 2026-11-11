@@ -39,7 +39,7 @@ from evaluator import vm  # noqa: E402
 
 EX = os.path.join(REPO, "minivm-takehome", "examples")
 TIERS = ("examples", "easy", "medium", "complex", "schema2")
-IDENTITY = os.path.join(REPO, "minivm-takehome", "optimize")
+IDENTITY = os.path.join(REPO, "tools", "identity_opt.sh")
 HAND = os.path.join(REPO, "prototype_code", "optimizer_agent", "hand_opt.sh")
 OPT_TIMEOUT_S = 10.0
 
