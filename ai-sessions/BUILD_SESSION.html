@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>Build session: MiniVM optimizer + evaluator</title>
+  <script type="application/json" id="snowflake-report-metadata">
+  {
+    "generated": "2026-11-11",
+    "intent": "Record of the MiniVM BUILD session (session fbd23c3f-608b-4330-a7ac-860d8f7fb94a and its 3 subagents): what was built, how, the numbers, decisions, and AI usage.",
+    "dataSources": [
+      { "type": "file", "path": "progress.md" },
+      { "type": "file", "path": "runs/evaluator_iterations.md" },
+      { "type": "file", "path": "runs/testsuite_iterations.md" },
+      { "type": "file", "path": "runs/loop.jsonl" },
+      { "type": "file", "path": "ai-sessions/raw/fbd23c3f-608b-4330-a7ac-860d8f7fb94a.json" }
+    ],
+    "sections": [
+      { "id": "big-picture", "title": "The build in one picture", "producerNotes": "Hand-drawn from the session; mermaid diagram." },
+      { "id": "timeline", "title": "Step by step", "dataSources": [{ "type": "file", "path": "progress.md" }, { "type": "file", "path": "git log d7c30ff..d1cbf29" }] },
+      { "id": "numbers", "title": "Key numbers",
+        "dataSources": [{ "type": "file", "path": "runs/loop.jsonl" }, { "type": "file", "path": "runs/bench_last.json" }],
+        "producerNotes": "Measured with tools/loop.py (tools/bench.py + ./evaluate) at commit d1cbf29." },
+      { "id": "agents", "title": "Agents used", "dataSources": [{ "type": "file", "path": "prompts/fbd23c3f_subagent_prompts.md" }] },
+      { "id": "lessons", "title": "What we learned" },
+      { "id": "ai-usage", "title": "AI models and usage",
+        "dataSources": [{ "type": "query", "sql": "SELECT f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits, MIN(h.USAGE_TIME) AS first_use, MAX(h.USAGE_TIME) AS last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'desktop' AND h.USAGE_TIME >= '2026-11-10 22:32:00 +0000' GROUP BY f.key ORDER BY credits DESC" }],
+        "producerNotes": "Queried 2026-11-11 ~01:45 UTC. Window starts at this session's creation (22:32 UTC); includes its 3 subagents. The only other Desktop session in the window (d65688c6) lasted 1 minute with no history. ACCOUNT_USAGE lags, so the last minutes may be missing." },
+      { "id": "next", "title": "Where we stopped and what's next", "dataSources": [{ "type": "file", "path": "progress.md" }] }
+    ]
+  }
+  </script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: -apple-system, system-ui, sans-serif; max-width: 920px; width: 100%; box-sizing: border-box;
+           margin: 0 auto; padding: clamp(16px, 4vw, 28px); line-height: 1.5; color: light-dark(#1f2937, #e5e7eb);
+           background: light-dark(#ffffff, #111827); }
+    h1, h2, h3 { color: light-dark(#0f172a, #f1f5f9); }
+    h2 { margin-top: 2em; border-bottom: 1px solid light-dark(#e5e7eb, #374151); padding-bottom: 4px; }
+    a { color: light-dark(#2563eb, #60a5fa); }
+    code { background: light-dark(#f3f4f6, #1f2937); padding: 1px 4px; border-radius: 4px; font-size: 0.92em; }
+    img, svg { max-width: 100%; height: auto; }
+    .sub { color: light-dark(#6b7280, #9ca3af); }
+    .table-wrap { overflow-x: auto; margin: 14px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.93em; }
+    th, td { border: 1px solid light-dark(#d1d5db, #374151); padding: 6px 9px; text-align: left; vertical-align: top; }
+    th { background: light-dark(#f3f4f6, #1f2937); font-weight: 600; }
+    td.n { text-align: right; white-space: nowrap; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
+    .card { border: 1px solid light-dark(#e5e7eb, #374151); border-radius: 10px; padding: 12px 14px;
+            background: light-dark(#f9fafb, #1f2937); }
+    .card .v { font-size: 1.6em; font-weight: 700; color: light-dark(#0f172a, #f8fafc); }
+    .card .l { font-size: 0.85em; color: light-dark(#6b7280, #9ca3af); }
+    .ok { color: light-dark(#15803d, #4ade80); font-weight: 600; }
+    .warn { color: light-dark(#b45309, #fbbf24); font-weight: 600; }
+    .bad { color: light-dark(#b91c1c, #f87171); font-weight: 600; }
+    .chart-box { position: relative; width: 100%; height: 300px; }
+    .chart-box > canvas { width: 100% !important; height: 100% !important; }
+    pre.mermaid { background: transparent; text-align: center; }
+  </style>
+</head>
+<body>
+
+<h1>Build session: MiniVM optimizer + evaluator</h1>
+<p class="sub">Session <code>fbd23c3f-608b-4330-a7ac-860d8f7fb94a</code> · Cortex Code Desktop · claude-opus-5-5 ·
+2026-11-10 22:32 → 2026-11-11 01:45 UTC · 3 subagents · 16 commits (<code>d7c30ff</code> … <code>d1cbf29</code>) · ≈ 19.2 credits</p>
+
+<p>Goal of the session: turn <code>BUILD_PLAN.md</code> into working code. That means an evaluator that can't be fooled, a test suite with
+easy/medium/complex programs and baselines, and an optimizer improved in a scripted <b>optimize ⇄ evaluate</b> loop. Every round is logged in
+<code>progress.md</code>. Correctness first: a wrong answer is worse than a slow one.</p>
+
+<div class="cards">
+  <div class="card"><div class="v ok">0</div><div class="l">defects in ~3,900 checks (full evaluate, seed 1)</div></div>
+  <div class="card"><div class="v">1.08×</div><div class="l">optimizer speedup on the 62-program suite (examples 1.17×)</div></div>
+  <div class="card"><div class="v">40/40</div><div class="l">seeded bugs caught by the evaluator, 0/17 false alarms</div></div>
+  <div class="card"><div class="v">~20 s</div><div class="l">one loop round (bench + quick evaluate); full gate 32 s</div></div>
+</div>
+
+<h2 id="big-picture">The build in one picture</h2>
+<pre class="mermaid">
+flowchart LR
+  P[BUILD_PLAN.md + prototypes] --> E[evaluator/: datagen, progen, typed + tie-aware compare]
+  P --> T[tests/: 16 easy, 15 medium, 12 complex, 11 HR-schema programs + baselines]
+  E --> M[meta-eval: 57 fake optimizers]
+  P --> O[optimizer/: parse→SSA, annotate, passes, cost, emit]
+  O -->|./optimize| L{{tools/loop.py: bench + ./evaluate}}
+  T --> L
+  E --> L
+  L -->|defect? fix or revert| O
+  L -->|green| G[commit + progress.md row]
+</pre>
+<p class="sub">The orchestrator (main session) owned the plan and the optimizer. Subagents built the test suite and hardened the evaluator.
+The checker is a script, not an LLM.</p>
+
+<h2 id="timeline">Step by step</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>UTC</th><th>Step (ELI5)</th><th>Result</th><th>Commit</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>22:35</td><td>Re-ran the prototypes to get starting numbers: do-nothing, hand-made fast versions, known-wrong fast versions.</td>
+<td>identity 1.00×, hand 2.39×, naive 2.16× with 138 defects (all caught)</td><td>—</td></tr>
+<tr><td>1</td><td>22:50</td><td>Wrote 28 easy/medium/complex test programs (one rewrite or trap each). Built the production checker: random legal tables, random legacy-style programs, typed + order + tie-aware comparison, repros, watchdog.</td>
+<td>identity: 0 defects; quick 777 checks / 5 s, full 3,768 / 23 s</td><td><code>d7c30ff</code></td></tr>
+<tr><td>1b</td><td>22:55</td><td>Bug in our own checker: helper files written next to the inputs got picked up as new programs (159→205).</td>
+<td>Moved to a temp dir; 92 stray files deleted</td><td><code>d7c30ff</code></td></tr>
+<tr><td>2</td><td>22:59–00:50</td><td>Split the work across 3 parallel subagents with disjoint file ownership: test suite, evaluator red-team, optimizer.</td>
+<td>Test suite ✅, evaluator ✅ (cancelled by the user after 5 commits, work kept), optimizer ✗ (hit the 32k output limit, wrote nothing)</td><td><code>d5cb5b8</code> … <code>43fcd18</code></td></tr>
+<tr><td>3</td><td>00:55</td><td>Measured what each test tier costs to run; agreed on cadence B (quick inner loop, full gates) with gated idioms.</td>
+<td>selftest 0.5 s, bench 2.9 s, quick 5.8 s, full 22 s, meta-eval 346 s</td><td>—</td></tr>
+<tr><td>4</td><td>01:10</td><td>Built <code>tools/loop.py</code>: one command per round, compact defect digest, auto-logs a <code>progress.md</code> row.</td>
+<td>~1k tokens to read per round</td><td><code>8bf7348</code></td></tr>
+<tr><td>5</td><td>01:17</td><td>Optimizer skeleton in 5 small files: parse→SSA, annotate, passes to a fixpoint (dead code + duplicates), cost model, emit, fallback guard.</td>
+<td>0 defects; suite 1.07×, generated 1.36×</td><td><code>8bf7348</code></td></tr>
+<tr><td>6</td><td>01:22</td><td>Pointed <code>minivm-takehome/optimize</code> and <code>evaluate</code> at the real code; the do-nothing baseline moved to <code>tools/identity_opt.sh</code>.</td>
+<td>works from any cwd</td><td><code>8f06f8c</code></td></tr>
+<tr><td>7</td><td>01:35</td><td>Rank 1 finished: duplicate-finder knows <i>a AND b = b AND a</i>, <i>x&lt;5 = 5&gt;x</i>, <i>ORDERS.O_ID = orders.o_id</i>, <i>f AND f = f</i>. Measured first: little left to win.</td>
+<td>0 defects; 1.08× suite, 1.37× generated; e16 21→13 instructions</td><td><code>d1cbf29</code></td></tr>
+<tr><td>8</td><td>01:40</td><td>Prioritised ranks 2–8 by value/effort; wrote a simple ELI5 hand-off prompt for items 1–4 (gather composition, compute after filter, identity sort, dead sort + NLJOIN→HJOIN).</td>
+<td>~1 h projected for items 1–4</td><td>—</td></tr>
+</tbody></table></div>
+
+<h2 id="numbers">Key numbers</h2>
+<h3>Optimizer today (commit <code>d1cbf29</code>) vs reference</h3>
+<div class="chart-box"><canvas id="tiers"></canvas></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Tier</th><th>Programs</th><th>Correct</th><th>Faster at all</th><th>≥ 1.2×</th><th>Geomean</th><th>Hand-optimized ref.</th></tr></thead>
+<tbody>
+<tr><td>examples</td><td class="n">8</td><td class="n ok">100%</td><td class="n">100%</td><td class="n">37%</td><td class="n">1.17×</td><td class="n">3.06×</td></tr>
+<tr><td>easy</td><td class="n">16</td><td class="n ok">100%</td><td class="n">31%</td><td class="n">25%</td><td class="n">1.17×</td><td class="n">—</td></tr>
+<tr><td>medium</td><td class="n">15</td><td class="n ok">100%</td><td class="n">13%</td><td class="n">0%</td><td class="n">1.01×</td><td class="n">—</td></tr>
+<tr><td>complex</td><td class="n">12</td><td class="n ok">100%</td><td class="n">41%</td><td class="n">0%</td><td class="n">1.03×</td><td class="n">—</td></tr>
+<tr><td>HR schema</td><td class="n">11</td><td class="n ok">100%</td><td class="n">18%</td><td class="n">9%</td><td class="n">1.03×</td><td class="n">—</td></tr>
+</tbody></table></div>
+<p class="sub">Hand-optimized versions exist only for the 8 examples. Max optimizer time 0.08 s (limit 1 s).</p>
+
+<h3>Test runtimes (16 cores)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Tier</th><th>What</th><th>Wall</th></tr></thead>
+<tbody>
+<tr><td><code>tools/eval_selftest.py</code></td><td>84 comparator / order / tie rules</td><td class="n">0.5 s</td></tr>
+<tr><td><code>tools/bench.py</code></td><td>61–62 suite programs × test data, per-tier speedups</td><td class="n">3–4 s</td></tr>
+<tr><td><code>./evaluate --quick</code></td><td>80 programs, 14 datasets, 1,112 checks</td><td class="n">6–8 s</td></tr>
+<tr><td><code>./evaluate</code> (full)</td><td>150 programs, 78 datasets incl. random schemas and xlarge, ~3,900 checks</td><td class="n">22–32 s</td></tr>
+<tr><td><code>tools/meta_eval.py</code></td><td>57 fake optimizers (checks the checker)</td><td class="n">346 s</td></tr>
+</tbody></table></div>
+
+<h3>Where the optimizer's remaining cycles go (cost-model estimate)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Bucket</th><th>Share</th><th>Rewrite that attacks it</th></tr></thead>
+<tbody>
+<tr><td>element-wise ops</td><td class="n">25%</td><td>rank 3: compute after filter</td></tr>
+<tr><td>joins</td><td class="n">16%</td><td>ranks 5–7: pushdown, lookup joins, NLJOIN→HJOIN</td></tr>
+<tr><td>sort / topk</td><td class="n">15%</td><td>rank 4: TOPK, dead sort, identity sort</td></tr>
+<tr><td>loads</td><td class="n">15%</td><td>mostly unavoidable</td></tr>
+<tr><td>gathers</td><td class="n">14%</td><td>rank 2: gather composition</td></tr>
+<tr><td>group / aggregates</td><td class="n">9%</td><td>rank 8 idioms</td></tr>
+</tbody></table></div>
+
+<h2 id="agents">Agents used</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Agent</th><th>Owned</th><th>Outcome</th></tr></thead>
+<tbody>
+<tr><td>Orchestrator (main session)</td><td>plan, <code>optimizer/</code>, <code>tools/loop.py</code>, <code>progress.md</code></td><td>Evaluator skeleton, first test programs, optimizer skeleton + rank 1, loop runner, prioritisation</td></tr>
+<tr><td>Test-suite builder (subagent)</td><td><code>tests/**</code>, <code>tools/bench.py</code>, <code>make_testdata.py</code>, <code>make_stress.py</code></td><td class="ok">Done: 43 example-schema + 11 HR programs, deterministic data, baselines (hand-opt 3.06× on examples), stress cases (20k instructions, 10k rows, 4M-pair join)</td></tr>
+<tr><td>Evaluator red-team (subagent, never saw optimizer code)</td><td><code>evaluator/**</code>, fakes, meta-eval, selftest</td><td class="ok">40/40 buggy fakes caught, 0/17 false alarms; tie instrumentation validated on 6,928 pairs; cancelled by the user after its work was committed</td></tr>
+<tr><td>Optimizer builder (subagent)</td><td><code>optimizer/**</code></td><td class="bad">Failed: tried to write the whole optimizer in one 32k-token output; no files written. Rebuilt in the main session as 5 small modules.</td></tr>
+</tbody></table></div>
+
+<h2 id="lessons">What we learned</h2>
+<ol>
+<li><b>Small files beat one big answer.</b> The optimizer subagent died at its output limit. Writing 5 modules of 70–220 lines each worked first time.</li>
+<li><b>The fallback guard can hide bugs.</b> A string literal with a space (<code>' / '</code>) was read as a sort key, crashing 6 programs into the "print the original" path. The evaluator still said 0 defects; only a per-stage smoke test exposed it.</li>
+<li><b>Measure before building.</b> Before extending rank 1, a 0.1 s scan showed nothing left to win: dead-code removal already deletes 47% of instructions on generated programs, and CSE only 31 of 1,290.</li>
+<li><b>Machine time is cheap; LLM time dominates.</b> A full 3-seed gate costs ~90 s. A coding round costs minutes of model time, so a script digest (~1k tokens per round) matters more than skipping tests.</li>
+<li><b>Generated programs and random schemas are what keep the optimizer honest.</b> The 8 examples alone would let name-matching or overfit rewrites pass.</li>
+<li><b>Our own tooling has bugs too.</b> The evaluator wrote helper files into the corpus, and an instrumented original crashed on an empty <code>GALL</code>. Both were caught because results were checked against expectations, not assumed.</li>
+</ol>
+
+<h2 id="ai-usage">AI models and usage</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Model</th><th>Requests</th><th>Input</th><th>Cache read</th><th>Cache write</th><th>Output</th><th>Credits</th></tr></thead>
+<tbody>
+<tr><td>claude-opus-5-5</td><td class="n">239</td><td class="n">536</td><td class="n">55,147,331</td><td class="n">3,003,919</td><td class="n">445,097</td><td class="n">19.224</td></tr>
+<tr><td>gemini-3.7-flash</td><td class="n">5</td><td class="n">1,825</td><td class="n">0</td><td class="n">0</td><td class="n">1,310</td><td class="n">0.004</td></tr>
+<tr><th>Total</th><th class="n">244</th><th colspan="4" class="n">≈ 58.6 M tokens in (94% cache reads), 0.45 M out</th><th class="n">≈ 19.2</th></tr>
+</tbody></table></div>
+<p class="sub">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, Desktop interface, user SKODI, from 2026-11-10 22:32 UTC
+(this session + its 3 subagents). Cache reads dominate because each turn re-reads the growing conversation.</p>
+
+<h2 id="next">Where we stopped and what's next</h2>
+<ul>
+<li><b>State:</b> commit <code>d1cbf29</code>. 0 defects, suite 1.08×, examples 1.17× (hand-optimized reference 3.06×).</li>
+<li><b>Next (≈ 1 h, low risk):</b> items 1–4 of the plan. Gather composition, compute after filter, identity SORT on <code>sorted</code> tables, dead SORT + NLJOIN→HJOIN. Projected: about half the suite ≥ 1.2× faster, examples ~1.6–2×.</li>
+<li><b>Later:</b> TOPK (30 min), filter pushdown + lookup joins (1.5 h), self-join idioms (2–3 h, gated; revert on any defect).</li>
+<li><b>Record:</b> raw sessions in <code>ai-sessions/raw/</code> (this session and its subagents: <code>fbd23c3f</code>, <code>8bd6e105</code>, <code>c6f9a650</code>, <code>ff2fe706</code>), prompts in <code>prompts/</code>, iteration logs in <code>progress.md</code> and <code>runs/</code>.</li>
+</ul>
+
+<script src="/libs/mermaid@10.9.6/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'strict',
+    theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' });
+</script>
+<script src="/libs/chart.js@4.4.4/chart.umd.js"></script>
+<script>
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const fg = dark ? '#e5e7eb' : '#1f2937', grid = dark ? '#374151' : '#e5e7eb';
+  new Chart(document.getElementById('tiers'), {
+    type: 'bar',
+    data: {
+      labels: ['examples', 'easy', 'medium', 'complex', 'HR schema'],
+      datasets: [
+        { label: 'Optimizer today (geomean ×)', data: [1.17, 1.17, 1.01, 1.03, 1.03], backgroundColor: '#29B5E8' },
+        { label: 'Hand-optimized reference (×)', data: [3.06, null, null, null, null], backgroundColor: '#94a3b8' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: fg } } },
+      scales: { x: { ticks: { color: fg }, grid: { color: grid } },
+                y: { beginAtZero: true, ticks: { color: fg }, grid: { color: grid }, title: { display: true, text: 'speedup (×)', color: fg } } } }
+  });
+</script>
+</body>
+</html>

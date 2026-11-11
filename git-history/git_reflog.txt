@@ -1,3 +1,18 @@
+55b8b1c HEAD@{2026-11-10 20:45:58 -0500}: commit: Rule 1: compose chained GATHERs so columns aren't carried through every step
+d1cbf29 HEAD@{2026-11-10 20:25:43 -0500}: commit: Rank 1: CSE recognises commutative/flipped operands, case-insensitive LOADs, AND/OR x,x; add e16 test
+8f06f8c HEAD@{2026-11-10 20:18:58 -0500}: commit: Wire minivm-takehome/optimize and evaluate to the real optimizer/evaluator; identity baseline moves to tools/identity_opt.sh
+8bf7348 HEAD@{2026-11-10 20:17:08 -0500}: commit: Optimizer skeleton: parse->SSA, annotate, DCE+CSE to fixpoint, cost model, emit, fallback guard; loop runner
+43fcd18 HEAD@{2026-11-10 19:49:26 -0500}: commit: Evaluator: 4 NULL-logic buggy fakes and generator idioms that expose them (logic3, countv, negated conjunctions); progress.md entry
+01b5d67 HEAD@{2026-11-10 19:30:49 -0500}: commit: Evaluator: final meta-eval report (36/36 buggy caught, 0/17 false alarms) and iteration log
+7a4dc59 HEAD@{2026-11-10 19:17:39 -0500}: commit: Evaluator: GALL totals are single rows (not ordered); don't trace sort keys through GALL (instrumented original crashed on empty groups)
+f439d01 HEAD@{2026-11-10 19:14:00 -0500}: commit: Evaluator: idiom-forced program generation (every idiom covered per seed), xlarge stress data in full runs
+de7f46e HEAD@{2026-11-10 18:45:58 -0500}: commit: Evaluator hardening: meta-eval with 53 fakes, fast path, useful-program filter, stricter cut-off tie rule, self-test
+9bbd0b9 HEAD@{2026-11-10 18:33:35 -0500}: commit: Move runbook into tests/ and focus it on the test suite: layout, data, bench, baselines, stress, program catalogue
+5989d1d HEAD@{2026-11-10 18:29:34 -0500}: commit: Add runbook.md: how to run evaluate, bench, test data, stress and meta-eval
+2cdb61a HEAD@{2026-11-10 18:20:28 -0500}: commit: Add bench.py with identity/hand-opt baselines, scale-stress generator, test suite iteration log
+d5cb5b8 HEAD@{2026-11-10 18:11:45 -0500}: commit: Expand test suite to 15/15/12 example-schema programs, add hr schema with 11 programs, deterministic test data generator
+d7c30ff HEAD@{2026-11-10 17:58:07 -0500}: commit: Add production evaluator skeleton (datagen, progen, typed+tie-aware comparator) and easy/medium/complex test programs
+870f7d0 HEAD@{2026-11-10 17:29:35 -0500}: commit: Add per-session AI models, tokens and credits; refresh both session records
 438c9a2 HEAD@{2026-11-10 17:19:21 -0500}: commit: Stop the export hook from rewriting git-history on every turn
 0b557ed HEAD@{2026-11-10 17:16:38 -0500}: commit: Refresh session records for planning and review sessions
 92fdf0f HEAD@{2026-11-10 17:12:53 -0500}: commit: Refresh session record (auto-exported by the Stop hook)

@@ -1,0 +1,28 @@
+{
+ "title": "New Session",
+ "session_id": "ff2fe706-5b13-4cde-84d4-34bfc5913b53",
+ "working_directory": "/Users/skodi/Desktop/take-home-assessment",
+ "history": [],
+ "summarization": [],
+ "sessionType": "subagent",
+ "creationDate": 1794351571294,
+ "lastMessageDate": 1794352404955,
+ "thread": {
+  "threadId": "82264130445",
+  "accountHost": "sfpscogs-skodi-aws-demo.snowflakecomputing.com",
+  "lastSyncedHistoryLength": 16,
+  "detachReason": "fallback:"
+ },
+ "managed_profile": {
+  "version": 1,
+  "selection": "unresolved",
+  "scope": {
+   "connection": "skodi-demo",
+   "account": "SFPSCOGS-SKODI_AWS_DEMO",
+   "user": "SKODI"
+  },
+  "dismissed_fqns": [],
+  "fallback_model_id": "claude-opus-5-5"
+ },
+ "history_length": 20
+}

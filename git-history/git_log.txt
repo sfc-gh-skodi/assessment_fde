@@ -1,3 +1,348 @@
+commit 55b8b1c45047848b782e865c037232153efa47ba
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 20:45:58 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 20:45:58 2026 -0500
+
+    Rule 1: compose chained GATHERs so columns aren't carried through every step
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ optimizer/main.py   |  2 +-
+ optimizer/passes.py | 58 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ progress.md         |  1 +
+ 3 files changed, 55 insertions(+), 6 deletions(-)
+
+commit d1cbf29ac4b1fb064e93b94029898d2e243d3ee8
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 20:25:43 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 20:25:43 2026 -0500
+
+    Rank 1: CSE recognises commutative/flipped operands, case-insensitive LOADs, AND/OR x,x; add e16 test
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ optimizer/passes.py                       | 25 ++++++++++++++++++++++++-
+ progress.md                               |  1 +
+ tests/cases/easy/e16_commutative_cse.mini | 23 +++++++++++++++++++++++
+ 3 files changed, 48 insertions(+), 1 deletion(-)
+
+commit 8f06f8c4b16a018373cc1c339cc711b557bbf578
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 20:18:58 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 20:18:58 2026 -0500
+
+    Wire minivm-takehome/optimize and evaluate to the real optimizer/evaluator; identity baseline moves to tools/identity_opt.sh
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ minivm-takehome/evaluate  | 2 +-
+ minivm-takehome/optimize  | 2 +-
+ prototype_code/run_all.sh | 2 +-
+ tests/runbook.md          | 4 ++--
+ tools/bench.py            | 2 +-
+ tools/identity_opt.sh     | 3 +++
+ 6 files changed, 9 insertions(+), 6 deletions(-)
+
+commit 8bf7348d1404cd1c52f9c54e112ca05298aee971
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 20:17:08 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 20:17:08 2026 -0500
+
+    Optimizer skeleton: parse->SSA, annotate, DCE+CSE to fixpoint, cost model, emit, fallback guard; loop runner
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ optimize              |   3 +
+ optimizer/__init__.py |   0
+ optimizer/analyze.py  | 219 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ optimizer/cost.py     |  79 ++++++++++++++++++
+ optimizer/ir.py       | 152 +++++++++++++++++++++++++++++++++++
+ optimizer/main.py     |  45 +++++++++++
+ optimizer/passes.py   |  65 +++++++++++++++
+ progress.md           |   1 +
+ tools/loop.py         | 122 ++++++++++++++++++++++++++++
+ 9 files changed, 686 insertions(+)
+
+commit 43fcd18cfbcf98d160ac154b2339affd21c54a63
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 19:49:26 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 19:49:26 2026 -0500
+
+    Evaluator: 4 NULL-logic buggy fakes and generator idioms that expose them (logic3, countv, negated conjunctions); progress.md entry
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ evaluator/main.py            |  2 +-
+ evaluator/progen.py          | 36 +++++++++++++++++++++++++++++++-----
+ progress.md                  |  1 +
+ runs/evaluator_iterations.md |  1 +
+ runs/meta_report.md          | 11 +++++++++++
+ tools/fakes.py               |  8 ++++++++
+ 6 files changed, 53 insertions(+), 6 deletions(-)
+
+commit 01b5d677b58008fb471b61636d447c748cc13883
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 19:30:49 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 19:30:49 2026 -0500
+
+    Evaluator: final meta-eval report (36/36 buggy caught, 0/17 false alarms) and iteration log
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ runs/evaluator_iterations.md |   3 ++
+ runs/meta_report.md          | 122 +++++++++++++++++++------------------------
+ 2 files changed, 57 insertions(+), 68 deletions(-)
+
+commit 7a4dc595e0d26b667602993a24afaef0ac8c1009
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 19:17:39 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 19:17:39 2026 -0500
+
+    Evaluator: GALL totals are single rows (not ordered); don't trace sort keys through GALL (instrumented original crashed on empty groups)
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ evaluator/compare.py   | 13 +++++++++++--
+ tools/eval_selftest.py |  9 ++++++---
+ 2 files changed, 17 insertions(+), 5 deletions(-)
+
+commit f439d0188149b2cbfac9fa28033c7186f488528f
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 19:14:00 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 19:14:00 2026 -0500
+
+    Evaluator: idiom-forced program generation (every idiom covered per seed), xlarge stress data in full runs
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ evaluator/datagen.py |   4 +-
+ evaluator/main.py    |   8 ++--
+ evaluator/progen.py  |  47 +++++++++++++++-----
+ runs/meta_report.md  | 122 +++++++++++++++++++++++++++------------------------
+ 4 files changed, 107 insertions(+), 74 deletions(-)
+
+commit de7f46e26d1a87f5f8e047855fba4faa14b09619
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 18:45:58 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 18:45:58 2026 -0500
+
+    Evaluator hardening: meta-eval with 53 fakes, fast path, useful-program filter, stricter cut-off tie rule, self-test
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ evaluate                     |   2 +-
+ evaluator/compare.py         | 112 ++++++-
+ evaluator/datagen.py         |   7 +
+ evaluator/main.py            | 326 +++++++++++++-------
+ evaluator/progen.py          |  82 ++++-
+ runs/evaluator_iterations.md |   8 +
+ runs/meta_report.md          |  65 ++++
+ tools/eval_selftest.py       | 200 ++++++++++++
+ tools/fakes.py               | 719 +++++++++++++++++++++++++++++++++++++++++++
+ tools/meta_eval.py           | 112 +++++++
+ 10 files changed, 1493 insertions(+), 140 deletions(-)
+
+commit 9bbd0b90bfc1c752da35d3935150fc2f51da228f
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 18:33:35 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 18:33:35 2026 -0500
+
+    Move runbook into tests/ and focus it on the test suite: layout, data, bench, baselines, stress, program catalogue
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ runbook.md       | 191 ----------------------------------------
+ tests/runbook.md | 258 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 258 insertions(+), 191 deletions(-)
+
+commit 5989d1dd94f414804951f7136d67beb8370c9fb6
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 18:29:34 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 18:29:34 2026 -0500
+
+    Add runbook.md: how to run evaluate, bench, test data, stress and meta-eval
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ runbook.md | 191 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 191 insertions(+)
+
+commit 2cdb61ad80e1200a13706cd0357b556f46f0ecdc
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 18:20:28 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 18:20:28 2026 -0500
+
+    Add bench.py with identity/hand-opt baselines, scale-stress generator, test suite iteration log
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ runs/testsuite_iterations.md |    7 +
+ tests/baselines.json         | 7967 ++++++++++++++++++++++++++++++++++++++++++
+ tools/bench.py               |  272 ++
+ tools/make_stress.py         |  219 ++
+ 4 files changed, 8465 insertions(+)
+
+commit d5cb5b8a062fd9248aba22f2c6fc0a0b7b116bd2
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 18:11:45 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 18:11:45 2026 -0500
+
+    Expand test suite to 15/15/12 example-schema programs, add hr schema with 11 programs, deterministic test data generator
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .gitignore                                         |    2 +
+ .../cases/complex/c07_selfjoin_gmax_nullkeys.mini  |   21 +
+ tests/cases/complex/c08_category_parent.mini       |   31 +
+ tests/cases/complex/c09_star_four_join.mini        |   50 +
+ tests/cases/complex/c10_paid_ratio_div.mini        |   30 +
+ tests/cases/complex/c11_top2_lines_per_order.mini  |   37 +
+ tests/cases/complex/c12_semijoin_nokey_label.mini  |   28 +
+ tests/cases/easy/e13_num_scale_gmin.mini           |   14 +
+ tests/cases/easy/e14_unicode_upper_left.mini       |   13 +
+ tests/cases/easy/e15_empty_group_vs_gall.mini      |   13 +
+ tests/cases/medium/m11_topk_ties.mini              |   13 +
+ tests/cases/medium/m12_nulleq_join.mini            |   17 +
+ tests/cases/medium/m13_sorted_filtered.mini        |   19 +
+ tests/cases/medium/m14_sort_desc_ties.mini         |   16 +
+ tests/cases/medium/m15_label_before_join.mini      |   29 +
+ tests/schemas/hr/data.json                         | 1167 ++++++++++++++++++++
+ tests/schemas/hr/programs/h01_dead_cse.mini        |   16 +
+ .../schemas/hr/programs/h02_sorted_composite.mini  |   14 +
+ .../hr/programs/h03_nullable_check_trap.mini       |   10 +
+ tests/schemas/hr/programs/h04_lookup_label.mini    |   31 +
+ tests/schemas/hr/programs/h05_topk_num_ties.mini   |   12 +
+ tests/schemas/hr/programs/h06_nokey_semijoin.mini  |   22 +
+ tests/schemas/hr/programs/h07_selfref_manager.mini |   20 +
+ tests/schemas/hr/programs/h08_parent_rollup.mini   |   37 +
+ .../hr/programs/h09_top_earner_per_dept.mini       |   28 +
+ tests/schemas/hr/programs/h10_shift_avg_topk.mini  |   31 +
+ .../hr/programs/h11_nullife_selfjoin_gmax.mini     |   15 +
+ tests/schemas/hr/schema.json                       |    1 +
+ tools/make_testdata.py                             |   85 ++
+ 29 files changed, 1822 insertions(+)
+
+commit d7c30ff5e77dbeeb5b43ccd8d76b8fa8dddc2cb3
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 17:58:07 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 17:58:07 2026 -0500
+
+    Add production evaluator skeleton (datagen, progen, typed+tie-aware comparator) and easy/medium/complex test programs
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .gitignore                                    |   2 +
+ evaluate                                      |   3 +
+ evaluator/__init__.py                         |   0
+ evaluator/compare.py                          | 444 ++++++++++++++++++++++++++
+ evaluator/datagen.py                          | 296 +++++++++++++++++
+ evaluator/main.py                             | 255 +++++++++++++++
+ evaluator/progen.py                           | 415 ++++++++++++++++++++++++
+ evaluator/vm.py                               |  51 +++
+ progress.md                                   |  15 +
+ tests/cases/complex/c01_star_group.mini       |  66 ++++
+ tests/cases/complex/c02_rank_per_group.mini   |  31 ++
+ tests/cases/complex/c03_semijoin_dedup.mini   |  25 ++
+ tests/cases/complex/c04_group_broadcast.mini  |  24 ++
+ tests/cases/complex/c05_four_join_topk.mini   |  65 ++++
+ tests/cases/complex/c06_self_count_fewer.mini |  32 ++
+ tests/cases/easy/e01_dead_loads.mini          |  10 +
+ tests/cases/easy/e02_cse.mini                 |  13 +
+ tests/cases/easy/e03_sort_on_sorted.mini      |   9 +
+ tests/cases/easy/e04_always_true.mini         |   8 +
+ tests/cases/easy/e05_check_nullable_trap.mini |   8 +
+ tests/cases/easy/e06_nljoin.mini              |   9 +
+ tests/cases/easy/e07_compute_then_filter.mini |  14 +
+ tests/cases/easy/e08_empty_gall.mini          |  13 +
+ tests/cases/easy/e09_overwrite.mini           |  10 +
+ tests/cases/easy/e10_div_guarded_trap.mini    |   9 +
+ tests/cases/easy/e11_dead_sort.mini           |  11 +
+ tests/cases/easy/e12_unsorted_output.mini     |  14 +
+ tests/cases/medium/m01_sort_slice_topk.mini   |  14 +
+ tests/cases/medium/m02_sort_then_filter.mini  |  19 ++
+ tests/cases/medium/m03_pushdown_one_join.mini |  22 ++
+ tests/cases/medium/m04_lookup_label.mini      |  21 ++
+ tests/cases/medium/m05_group_sorted.mini      |  18 ++
+ tests/cases/medium/m06_customers_nokey.mini   |  18 ++
+ tests/cases/medium/m07_nullable_fk.mini       |  22 ++
+ tests/cases/medium/m08_payments_lookup.mini   |  26 ++
+ tests/cases/medium/m09_topk_after_filter.mini |  21 ++
+ tests/cases/medium/m10_mixed_ties.mini        |  13 +
+ 37 files changed, 2046 insertions(+)
+
+commit 870f7d073a6ff5b77654590b8b56e452e6bd88a8
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Tue Nov 10 17:29:35 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Tue Nov 10 17:29:35 2026 -0500
+
+    Add per-session AI models, tokens and credits; refresh both session records
+    
+    Model and token/credit breakdowns come from SNOWFLAKE_COCO_USAGE_HISTORY,
+    attributed per session by interface and start time (planning: Desktop,
+    ~15.8 credits; review: CLI, ~4.7 credits).
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .apd/hooks.log                                     |     4 +
+ ai-sessions/PLAN_SESSION_MENTAL_MODEL.html         |    33 +-
+ ...2a2eb-0227-4b40-bd66-eb44210c3e63.history.jsonl |    36 +
+ .../raw/2502a2eb-0227-4b40-bd66-eb44210c3e63.json  |    18 +-
+ ...8df4d-6085-4d1f-90b5-dfd32d2a4e14.history.jsonl |    42 +
+ .../raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.json  |    44 +-
+ ai-sessions/review_session.html                    |    31 +
+ git-history/git_log.txt                            |    26 +
+ git-history/git_log_patch.txt                      | 12826 +++++++++++++++++++
+ git-history/git_reflog.txt                         |     1 +
+ prompts/2502a2eb_user_prompts.md                   |    20 +-
+ prompts/INDEX.md                                   |     4 +-
+ prompts/cf78df4d_user_prompts.md                   |    14 +-
+ 13 files changed, 13066 insertions(+), 33 deletions(-)
+
 commit 438c9a259daa6ec3e17d1ed0fdea677fccbcb4d1
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Tue Nov 10 17:19:21 2026 -0500

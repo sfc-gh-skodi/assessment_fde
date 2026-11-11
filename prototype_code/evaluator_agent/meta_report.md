@@ -2,7 +2,7 @@
 
 ```
 OK           h_identity     honest prints the input unchanged
-             eval: programs=8 (order-specified 8) datasets=40 checked=320 skipped=0 defects=0 time=1.9s geomean_speedup=1.00x
+             eval: programs=8 (order-specified 8) datasets=40 checked=320 skipped=0 defects=0 time=2.0s geomean_speedup=1.00x
 OK           h_dce          honest removes instructions whose results are never used
              eval: programs=8 (order-specified 8) datasets=40 checked=320 skipped=0 defects=0 time=1.9s geomean_speedup=1.18x
 OK           h_rename       honest renames every register to v0, v1, ...

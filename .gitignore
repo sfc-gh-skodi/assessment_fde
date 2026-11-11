@@ -8,3 +8,5 @@ eval_out/
 runs/*/tmp/
 tests/data/
 tests/stress/
+runs/*_last*.json
+runs/loop.jsonl

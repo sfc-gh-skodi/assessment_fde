@@ -1,0 +1,98 @@
+{
+ "title": "MiniVM Program Optimizer",
+ "session_id": "d65688c6-2dd5-4500-a93d-ca38d871240b",
+ "working_directory": "/Users/skodi/Desktop/take-home-assessment",
+ "history": [],
+ "summarization": [],
+ "connection_name": null,
+ "session_accounts": [
+  "THB83496"
+ ],
+ "lastMessageDate": 1794361172028,
+ "lastUserMessageDate": 1794361127766,
+ "isEmpty": false,
+ "isExternal": false,
+ "creationDate": 1794361123459,
+ "session_break_suppressed": false,
+ "requestCount": 1,
+ "inputState": {
+  "contrib": {
+   "planModeEnabled": false,
+   "chatDynamicVariableModel": []
+  },
+  "attachments": [],
+  "mode": {
+   "id": "agent",
+   "kind": "agent"
+  },
+  "selectedCortexModelId": "claude-opus-5-5",
+  "selectedCortexModelIsExplicit": false,
+  "selectedThinkingEffort": "medium",
+  "inputText": "",
+  "selections": [
+   {
+    "startLineNumber": 1,
+    "startColumn": 1,
+    "endLineNumber": 1,
+    "endColumn": 1,
+    "selectionStartLineNumber": 1,
+    "selectionStartColumn": 1,
+    "positionLineNumber": 1,
+    "positionColumn": 1
+   }
+  ]
+ },
+ "managed_profile": {
+  "version": 1,
+  "selection": "unresolved",
+  "scope": {
+   "connection": "skodi-demo",
+   "account": "SFPSCOGS-SKODI_AWS_DEMO",
+   "user": "SKODI"
+  },
+  "dismissed_fqns": [],
+  "fallback_model_id": "claude-opus-5-5"
+ },
+ "history_length": 14,
+ "last_account_locator": "SFPSCOGS-SKODI_AWS_DEMO",
+ "lastTurn": {
+  "requestId": "request_88c3ad5d-8583-44b8-a488-16508902967a",
+  "userMessageId": "02e053f2",
+  "outcome": "cancelled",
+  "historyLength": 14
+ },
+ "thread": {
+  "threadId": "82264130449",
+  "accountHost": "sfpscogs-skodi-aws-demo.snowflakecomputing.com",
+  "lastSyncedHistoryLength": 14
+ },
+ "responseMetadata": {
+  "assistant_message_id": 5391261993827378,
+  "auto_router_selected": false,
+  "orchestration_model": "claude-opus-5-5",
+  "run_id": "82264130449-5391261993826426",
+  "summary_revision": "",
+  "thinking_effort": "medium",
+  "thread_id": 82264130449,
+  "usage": {
+   "tokens_consumed": [
+    {
+     "context_window": 1000000,
+     "input_tokens": {
+      "cache_read": 0,
+      "cache_write": 0,
+      "total": 0,
+      "uncached": 0
+     },
+     "model_name": "claude-opus-5-5",
+     "model_role": "orchestration",
+     "output_tokens": {
+      "total": 0
+     }
+    }
+   ]
+  },
+  "user_message_id": 5391261993826426
+ },
+ "titleIsAIGenerated": true
+}
