@@ -150,3 +150,64 @@ def emit(prog):
         args = ins.dests + ins.srcs
         lines.append(f"{ins.op:<7} {', '.join(args)}".rstrip())
     return "\n".join(lines) + "\n"
+
+
+def _sub(tok, m):
+    if kind(tok) not in ("reg", "key"):
+        return tok
+    r = key_reg(tok)
+    return m[r] + tok[len(r):]
+
+
+def reuse_registers(prog):
+    """Give a register's name to a new value once its last reader has run, so the
+    emitted program holds few columns at once (the 64M-values-in-all-registers
+    limit). A name freed by an instruction is reused only by a later one, never by
+    that instruction's own dests, so no instruction overwrites its own input."""
+    last = {}
+    for n, ins in enumerate(prog):
+        for r in ins.regs_used():
+            last[r] = n
+    m, free, out = {}, [], []
+    for n, ins in enumerate(prog):
+        srcs = [t if (i + 1) in INT_OPERANDS.get(ins.op, ()) else _sub(t, m)
+                for i, t in enumerate(ins.srcs)]
+        dests = []
+        for d in ins.dests:
+            if d not in m:
+                m[d] = free.pop() if free else d
+            dests.append(m[d])
+        out.append(Instr(ins.op, dests, srcs))
+        # release after this instruction: inputs read for the last time here,
+        # and dests nobody reads
+        done = {r for r in ins.regs_used() if last.get(r) == n}
+        done |= {d for d in ins.dests if d not in last}
+        for r in sorted(done):
+            name = m[r]
+            if name not in free and name not in {m[x] for x in ins.dests if x not in done}:
+                free.append(name)
+    return out
+
+
+def same_shape(a, b):
+    """True if a and b are the same SSA program up to register names."""
+    if len(a) != len(b):
+        return False
+    m = {}
+    for x, y in zip(a, b):
+        if x.op != y.op or len(x.dests) != len(y.dests) or len(x.srcs) != len(y.srcs):
+            return False
+        for s, t in zip(x.srcs, y.srcs):
+            if kind(s) in ("reg", "key"):
+                if kind(t) not in ("reg", "key") or m.get(key_reg(s)) != key_reg(t) \
+                        or s[len(key_reg(s)):] != t[len(key_reg(t)):]:
+                    return False
+            elif s != t:
+                return False
+        if x.dests and (x.dests[0] == x.dests[-1]) != (y.dests[0] == y.dests[-1]):
+            return False
+        for d, e in dict(zip(x.dests, y.dests)).items():
+            if d in m:
+                return False
+            m[d] = e
+    return True

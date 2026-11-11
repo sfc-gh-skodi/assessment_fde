@@ -309,7 +309,7 @@ def pointless(prog, schema=None):
     return out, changed
 
 
-PASSES = [gather_chain, filter_first, sorted_sort, pointless, cse, dce]
+PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless]   # cheap clean-up first, so the analysis-based rules see a smaller program
 
 
 def run(prog, schema=None, deadline=None):
@@ -318,8 +318,10 @@ def run(prog, schema=None, deadline=None):
     for _ in range(50):
         changed = False
         for p in PASSES:
+            if deadline and time.monotonic() > deadline:
+                return prog              # every pass output is a correct program
             prog, c = p(prog, schema)
             changed |= c
-        if not changed or (deadline and time.monotonic() > deadline):
+        if not changed:
             break
     return prog
