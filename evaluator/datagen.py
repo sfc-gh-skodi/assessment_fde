@@ -14,7 +14,7 @@ import random
 import re
 from decimal import Decimal
 
-SIZES = {"small": (0, 6), "medium": (20, 150), "large": (600, 2500)}
+SIZES = {"small": (0, 6), "medium": (20, 150), "large": (600, 2500), "xlarge": (3000, 4000)}
 WEIRD = ["", " ", "  ", "ß", "straße", "Zoë", "e\u0301", "ﬁx", "İ", "ı", "🙂", "it's", "a,b", ";x",
          "NULL", "null", "\t", "ǅ", "x" * 45, "Ünïcødé ✓", "  lead", "trail  ", "1.0", "1.00", "2024-01-01"]
 SPECIAL_DATES = ["2022-12-31", "2023-01-01", "2023-01-02", "2023-06-30", "2023-07-01", "2023-07-31",
@@ -197,7 +197,7 @@ class Gen:
         if self.size == "small" and self.rng.random() < 0.25:
             return self.rng.choice([0, 1])
         n = self.rng.randint(lo, hi)
-        return n * 3 if self.s[t].get("refs") and self.size != "small" else n
+        return min(10000, n * 3 if self.s[t].get("refs") and self.size != "small" else n)
 
     def gen_table(self, t):
         rng, spec = self.rng, self.s[t]

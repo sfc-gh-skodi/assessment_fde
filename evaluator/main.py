@@ -61,7 +61,7 @@ def build_corpus(work, seed, quick):
     fixed += sorted(glob.glob(os.path.join(REPO, "tests", "cases", "**", "*.mini"), recursive=True))
     fixed += sorted(glob.glob(os.path.join(REPO, "tests", "regressions", "*.mini")))
     n_gen = 24 if quick else 60
-    sizes = (6, 5, 2) if quick else (14, 7, 3)
+    sizes = (6, 5, 2, 0) if quick else (14, 7, 3, 1)
     schemas = [("example", ex_schema, fixed, [os.path.join(EX, "data.json")])]
     for k in range(0 if quick else 2):
         sch = progen.random_schema(random.Random(seed * 100 + k), name=f"g{k}")
@@ -84,15 +84,15 @@ def build_corpus(work, seed, quick):
         gen = []
         count = n_gen if name == "example" else n_gen // 3
         for i in range(int(count * 1.5)):          # spares replace programs that never give rows
-            text = progen.gen_program(sch, random.Random(rng.random()))
+            text = progen.gen_program(sch, random.Random(rng.random()), progen.IDIOMS[i % len(progen.IDIOMS)])
             p = os.path.join(d, f"gen_{name}_{i:03d}.mini")
             open(p, "w").write(text)
             gen.append(p)
         lits = datagen.harvest(open(p).read() for p in progs + gen)
-        for size, n in zip(("small", "medium", "large"), sizes):
+        for size, n in zip(("small", "medium", "large", "xlarge"), sizes):
             for i in range(n):
                 p = os.path.join(d, f"{size}_{i}.json")
-                json.dump(datagen.generate(sch, size, seed * 1000 + i + {"small": 0, "medium": 100, "large": 200}[size],
+                json.dump(datagen.generate(sch, size, seed * 1000 + i + {"small": 0, "medium": 100, "large": 200, "xlarge": 300}[size],
                                            lits), open(p, "w"), ensure_ascii=False)
                 data.append(p)
         groups.append((name, sp, sch, progs, gen[:], data, count))

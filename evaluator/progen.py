@@ -21,8 +21,8 @@ class Col:
 
 
 class P:
-    def __init__(self, schema, rng):
-        self.s, self.rng = schema, rng
+    def __init__(self, schema, rng, force=None):
+        self.s, self.rng, self.force = schema, rng, force
         self.lines, self.n = [], 0
         self.style = rng.choice(["upper", "lower"])
         self.prefix = rng.choice(["r", "t", "x"])
@@ -143,6 +143,18 @@ class P:
         """predicate(), sometimes negated (3-valued NOT) or a null-safe IS test."""
         rng = self.rng
         r = rng.random()
+        if self.force == "notnull_filter":
+            self.force = None
+            nb = [c for c in cols if c.nullable and c.type != "BOOL"] or cols
+            c = rng.choice(nb)
+            m = self.fresh("f")
+            self.emit("ISNULL", m, c.reg)
+            m2 = self.fresh("f")
+            self.emit("NOT", m2, m)
+            return m2
+        if self.force == "is_null":
+            self.force = None
+            r = 0.0
         if r < 0.08:
             c = rng.choice(cols)
             m = self.fresh("f")
@@ -281,6 +293,8 @@ class P:
         """per row: aggregate over the rows sharing a key (correlated subquery style)."""
         rng = self.rng
         keys = [c for c in cols if c.type in ("STR", "INT") and c.table]
+        if self.force == "self_join_nulleq":
+            keys = [c for c in keys if c.nullable] or keys
         vals = [c for c in cols if c.type in NUMT]
         if not keys or not vals:
             return cols, None
@@ -294,7 +308,7 @@ class P:
             kr = self.fresh("u")
             self.emit("UPPER", kr, b)
         a, b = self.fresh("a"), self.fresh("b")
-        if k.nullable and rng.random() < 0.3:
+        if k.nullable and (rng.random() < 0.3 or self.force == "self_join_nulleq"):
             self.emit("HJOIN", a, b, kr, kr, "NULLEQ", comment="every pair with the same key, NULLs together")
         else:
             self.emit("HJOIN", a, b, kr, kr, comment="every pair with the same key")
@@ -333,6 +347,8 @@ class P:
     def finish(self, cols):
         rng = self.rng
         kind = rng.choice(["proj", "sort", "sort", "topn", "group", "gall", "topk", "topn_filter", "proj_bool"])
+        if self.force in FINISH:
+            kind = self.force
         out = rng.sample(cols, min(len(cols), rng.randint(1, 4)))
         if kind == "proj":
             self.emit("OUT", *[c.reg for c in out])
@@ -352,7 +368,7 @@ class P:
             outs = self.gather_all(cols, p)
             i = self.fresh("k")
             self.emit("IOTA", i, outs[0].reg)
-            self.emit("SLICE", i, i, rng.choice([3, 5, 10, 20]))
+            self.emit("SLICE", i, i, rng.choice([2, 3, 5, 10]))
             outs = self.gather_all(outs, i)
             outs = self.filt(outs, 1)
             self.emit("OUT", *[c.reg for c in outs[:rng.randint(1, 4)]])
@@ -414,27 +430,30 @@ class P:
     def build(self):
         rng = self.rng
         tabs = [t for t in self.s if self.s[t].get("stats", {}).get("rows", 1) > 0] or list(self.s)
+        if self.force == "sorted_sort":
+            tabs = [t for t in tabs if self.s[t].get("sorted")] or tabs
         t0 = rng.choice(tabs)
         self.lines.append(f"; generated legacy-style program over {t0}")
         cols = self.load_table(t0)
         sp = self.s[t0]
-        if sp.get("sorted") and rng.random() < 0.3:   # sort on a sorted table: identity
+        if sp.get("sorted") and (rng.random() < 0.3 or self.force == "sorted_sort"):   # sort on a sorted table: identity
             sk = [next(c for c in cols if c.name.lower() == k.lower()) for k in sp["sorted"]]
             p = self.fresh("s")
             self.emit("SORT", p, *[f"{c.reg} ASC NF" for c in sk], comment="keep the stored order stable")
             cols = self.gather_all(cols, p)
-        if rng.random() < 0.3:
+        many = self.force in ("topn_filter", "topk", "topn")      # cut-off idioms need many rows
+        if rng.random() < 0.3 and not many:
             cols = self.filt(cols)
-        late_filter = rng.random() < 0.7
+        late_filter = (rng.random() < 0.7 and not many) or self.force in ("notnull_filter", "is_null")
         for _ in range(rng.choice([0, 1, 1, 2, 3])):
             cols, _ = self.join(cols)
             if len(cols) > 40:
                 break
         extra = self.computed(cols)
         cols = cols + extra
-        if rng.random() < 0.15:
+        if rng.random() < 0.15 or self.force == "guarded_div":
             cols = self.guarded_div(cols)
-        if rng.random() < 0.25:
+        if rng.random() < 0.25 or self.force == "self_join_nulleq":
             cols, _ = self.self_join_agg(cols)
         if rng.random() < 0.3:      # sort, then filter (filter-before-sort is equivalent)
             keys = self.sort_keys(cols, 2)
@@ -447,8 +466,14 @@ class P:
         return "\n".join(self.lines) + "\n"
 
 
-def gen_program(schema, rng):
-    return P(schema, rng).build()
+FINISH = ("proj", "sort", "topn", "group", "gall", "topk", "topn_filter", "proj_bool")
+# idioms a corpus cycles through so each one is covered under every seed
+IDIOMS = ("topn_filter", "notnull_filter", "guarded_div", "self_join_nulleq", "is_null", "topk", "gall",
+          "group", "proj_bool", "sorted_sort", "topn", None)
+
+
+def gen_program(schema, rng, force=None):
+    return P(schema, rng, force).build()
 
 
 def random_schema(rng, name="gen"):
