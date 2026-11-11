@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Meta-evaluation: test ./evaluate against every fake optimizer in tools/fakes.py.
 
-  meta_eval.py [MODE ...] [--seed S] [--full] [-j N] [--seeds 1,2,3] [--out runs/meta_report.md]
+  meta_eval.py [MODE ...] [--seed S] [--full] [-j N] [--seeds 1,2,3] [--out tests/runs/meta_report.md]
 
   buggy fake + evaluate exit != 0 -> CAUGHT      buggy fake + exit 0 -> MISSED
   honest fake + evaluate exit 0   -> OK          honest fake + exit != 0 -> FALSE ALARM
 
 --seeds runs every fake under each seed (a buggy fake counts as CAUGHT only if caught
 under every seed; an honest fake is a FALSE ALARM if flagged under any seed).
-Writes a markdown report (default runs/meta_report.md). Exit 0 iff 0 missed and 0 false alarms.
+Writes a markdown report (default tests/runs/meta_report.md). Exit 0 iff 0 missed and 0 false alarms.
 """
 import argparse
 import json
@@ -55,7 +55,7 @@ def main(argv):
     ap.add_argument("--seeds")
     ap.add_argument("--full", action="store_true")
     ap.add_argument("-j", type=int, default=3)
-    ap.add_argument("--out", default=os.path.join(REPO, "runs", "meta_report.md"))
+    ap.add_argument("--out", default=os.path.join(REPO, "tests", "runs", "meta_report.md"))
     a = ap.parse_args(argv)
     modes = a.modes or list(fakes.MODES)
     seeds = [int(x) for x in a.seeds.split(",")] if a.seeds else [a.seed]

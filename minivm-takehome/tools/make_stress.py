@@ -201,9 +201,9 @@ def main(argv):
     print(f"  prog_20k.mini: {n} instructions")
     if "--run" in argv:
         runs = [(os.path.join(ex, p), os.path.join(ex, "data_10k.json")) for p in ("prog_20k.mini", "regpressure.mini")]
-        runs += [(os.path.join(ex, "prog_20k.mini"), os.path.join(REPO, "minivm-takehome", "examples", "data.json"))]
+        runs += [(os.path.join(ex, "prog_20k.mini"), os.path.join(REPO, "examples", "data.json"))]
         runs += [(os.path.join(fo, p), os.path.join(fo, "data.json")) for p in ("fanout_ok.mini", "fanout_over.mini")]
-        cases = sorted(glob.glob(os.path.join(REPO, "minivm-takehome", "examples", "programs", "*.mini")))
+        cases = sorted(glob.glob(os.path.join(REPO, "examples", "programs", "*.mini")))
         cases += sorted(glob.glob(os.path.join(REPO, "tests", "cases", "*", "*.mini")))
         runs += [(p, os.path.join(ex, "data_10k.json")) for p in cases]
         for p, d in runs:

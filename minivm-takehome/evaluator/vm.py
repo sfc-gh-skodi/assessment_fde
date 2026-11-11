@@ -11,7 +11,7 @@ import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, ".."))
-BUNDLE = os.path.join(REPO, "minivm-takehome")
+BUNDLE = REPO          # the take-home bundle (bin/, examples/, docs/) is this folder
 WRAPPER = os.path.join(BUNDLE, "bin", "minivm")
 
 

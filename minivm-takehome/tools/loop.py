@@ -9,7 +9,7 @@
 
 Prints a compact digest (tier speedups, defects grouped by program with the first
 detail and repro dir) so a round costs ~1k tokens to read. Appends the raw numbers
-to runs/loop.jsonl. Exit 1 if any defect.
+to tests/runs/loop.jsonl. Exit 1 if any defect.
 """
 import argparse
 import datetime
@@ -37,10 +37,10 @@ def main():
     ap.add_argument("--gate", default="")
     ap.add_argument("--log", nargs=3, metavar=("ITER", "APPROACH", "TAKEAWAY"))
     a = ap.parse_args()
-    os.makedirs(os.path.join(REPO, "runs"), exist_ok=True)
+    os.makedirs(os.path.join(REPO, "tests", "runs"), exist_ok=True)
 
-    r, bt = sh([sys.executable, "tools/bench.py", OPT, "--out", "runs/bench_last.json", "-q"])
-    bench = json.load(open(os.path.join(REPO, "runs/bench_last.json")))
+    r, bt = sh([sys.executable, "tools/bench.py", OPT, "--out", "tests/runs/bench_last.json", "-q"])
+    bench = json.load(open(os.path.join(REPO, "tests/runs/bench_last.json")))
     tiers = {k: v for k, v in bench["tiers"].items()}
     bdef = defaultdict(list)
     for name, p in bench["programs"].items():
@@ -55,11 +55,11 @@ def main():
     for sd in seeds:
         keep = os.path.join(REPO, "eval_out", f"seed{sd or 'q'}")
         shutil.rmtree(keep, ignore_errors=True)
-        cmd = ["./evaluate", OPT, "--json", f"runs/eval_last_{sd or 'q'}.json", "--keep", keep]
+        cmd = ["./evaluate", OPT, "--json", f"tests/runs/eval_last_{sd or 'q'}.json", "--keep", keep]
         cmd += ["--quick"] if sd is None else ["--seed", str(sd)]
         r, et = sh(cmd)
         try:
-            ev = json.load(open(os.path.join(REPO, f"runs/eval_last_{sd or 'q'}.json")))
+            ev = json.load(open(os.path.join(REPO, f"tests/runs/eval_last_{sd or 'q'}.json")))
         except Exception:
             print("EVALUATE FAILED:", r.stdout[-800:], r.stderr[-800:])
             return 2
@@ -94,7 +94,7 @@ def main():
     gen = [ev["geomean_speedup"] for ev in evals]
     rec = {"time": datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M"), "defects": tot_def, "tiers": {k: v.get("geomean") for k, v in tiers.items()},
            "eval": [{k: ev[k] for k in ("_seed", "checked", "defects", "geomean_speedup", "max_opt_s", "_wall")} for ev in evals]}
-    open(os.path.join(REPO, "runs/loop.jsonl"), "a").write(json.dumps(rec) + "\n")
+    open(os.path.join(REPO, "tests/runs/loop.jsonl"), "a").write(json.dumps(rec) + "\n")
 
     if a.log:
         it, approach, take = a.log

@@ -6,7 +6,7 @@
 
 OPTIMIZER is called as `OPTIMIZER program.mini schema.json` and must print a program.
 Corpus (no randomness; rebuild data with tools/make_testdata.py, done automatically if missing):
-  tiers     examples (minivm-takehome/examples/programs), easy / medium / complex
+  tiers     examples (examples/programs), easy / medium / complex
             (tests/cases/<tier>), schema2 (tests/schemas/<name>/programs)
   datasets  the schema's hand-written data.json + tests/data/<schema>/*.json
 Per (program, dataset): SKIP if the original errors; DEFECT if the optimizer fails, the
@@ -37,10 +37,10 @@ sys.path.insert(0, REPO)
 from evaluator import compare as C  # noqa: E402
 from evaluator import vm  # noqa: E402
 
-EX = os.path.join(REPO, "minivm-takehome", "examples")
+EX = os.path.join(REPO, "examples")
 TIERS = ("examples", "easy", "medium", "complex", "schema2")
 IDENTITY = os.path.join(REPO, "tools", "identity_opt.sh")
-HAND = os.path.join(REPO, "prototype_code", "optimizer_agent", "hand_opt.sh")
+HAND = os.path.join(REPO, "Pre_Build_inputs", "prototype_code", "optimizer_agent", "hand_opt.sh")
 OPT_TIMEOUT_S = 10.0
 
 

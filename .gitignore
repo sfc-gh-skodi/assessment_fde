@@ -20,3 +20,5 @@ minivm-takehome/tests/data/
 minivm-takehome/tests/stress/
 minivm-takehome/tests/runs/*_last*.json
 minivm-takehome/tests/runs/loop.jsonl
+# full patch history: shipped in the zip only (too big for GitHub; grows each commit)
+ai-sessions/git-history/git_log_patch.txt

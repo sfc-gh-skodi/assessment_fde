@@ -8,7 +8,7 @@ Python 3.8+ (standard library only) and the VM binary in `minivm-takehome/bin/`.
 `OPTIMIZER` is any executable called as `OPTIMIZER program.mini schema.json` that
 prints a MiniVM program. There are two reference optimizers:
 - `tools/identity_opt.sh` (identity): must score 1.00x with 0 defects.
-- `prototype_code/optimizer_agent/hand_opt.sh` (hand-optimized examples): known-good
+- `Pre_Build_inputs/prototype_code/optimizer_agent/hand_opt.sh` (hand-optimized examples): known-good
   speedups on the 8 example programs.
 
 ## Quick start

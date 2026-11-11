@@ -2,7 +2,7 @@
 
 Session `c9f778f7-7883-4ba4-8fe8-befd93970962` · Golden Set Optimizer Report
 
-prompts: 18
+prompts: 21
 
 ## 1. 2026-11-11 02:54:37 UTC
 
@@ -126,3 +126,19 @@ I reaaranged some folders to clean up. What does the runs folders have exactly E
 ## 18. 2026-11-11 12:24:35 UTC
 
 I lost all the prompts used in the various sessions, can you put them inside ai-session under a new folder prompts?
+
+## 19. 2026-11-11 12:28:04 UTC
+
+push all the changes
+
+## 20. 2026-11-11 12:30:25 UTC
+
+fix these : SUBMISSION.md (now minivm-takehome/docs/5.SUBMISSION.md) and 3.PROGRESS.md still mention old paths such as tools/, runs/, prompts/ and git-history/.
+
+meta_eval.py and loop.py still write to runs/.
+
+The session hook may still call the old exporter path.
+
+## 21. 2026-11-11 12:30:49 UTC
+
+Commit only git_log.txt and git_reflog.txt, and keep the patch file in the zip only. and do the rest to dos

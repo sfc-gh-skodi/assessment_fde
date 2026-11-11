@@ -578,7 +578,7 @@ def dedup_out(outs):
 
 def hand(path):
     q = os.path.basename(path)[:-5]
-    p = os.path.join(REPO, "prototype_code", "optimizer_agent", q + ".opt.mini")
+    p = os.path.join(REPO, "Pre_Build_inputs", "prototype_code", "optimizer_agent", q + ".opt.mini")
     return open(p).read() if os.path.exists(p) and q.startswith("q0") else open(path).read()
 
 

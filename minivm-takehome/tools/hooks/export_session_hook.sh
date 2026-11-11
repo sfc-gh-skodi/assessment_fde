@@ -4,12 +4,15 @@
 # Registered in ~/.snowflake/cortex/hooks.json. Cortex Code pipes a JSON payload on stdin
 # with session_id and cwd. The hook only acts when the session's working directory is
 # inside this repo, so sessions for other projects are never touched. Exports are keyed
-# by session id (see tools/export_session.py), so each session gets its own files and
-# nothing is overwritten. It skips git-history/ (--no-git) so commits don't create churn;
+# by session id (see minivm-takehome/tools/export_session.py), so each session gets its own files and
+# nothing is overwritten. It skips ai-sessions/git-history/ (--no-git) so commits don't create churn;
 # refresh that by running the exporter yourself before the final commit. It never commits
 # or pushes, prints nothing to stdout, and always exits 0, so it cannot block or alter a turn.
 
-REPO="$(cd "$(dirname "$0")/../.." && pwd -P)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+# the git repo root (tools/ now sits in minivm-takehome/ inside it)
+REPO="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null)" || exit 0
+REPO="$(cd "$REPO" && pwd -P)"
 LOG="$HOME/.snowflake/cortex/logs/export_session_hook.log"
 LOCK="${TMPDIR:-/tmp}/export_session_hook.lock"
 mkdir -p "$(dirname "$LOG")"
@@ -30,6 +33,6 @@ mkdir "$LOCK" 2>/dev/null || exit 0
 trap 'rmdir "$LOCK"' EXIT
 {
   echo "[$(date -u +%FT%TZ)] $EVENT $SID"
-  python3 "$REPO/tools/export_session.py" --no-git "$SID" 2>&1 | tail -1
+  python3 "$HERE/../export_session.py" --no-git "$SID" 2>&1 | tail -1
 } >> "$LOG" 2>&1
 exit 0
