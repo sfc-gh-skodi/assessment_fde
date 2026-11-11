@@ -514,20 +514,74 @@ def filter_pushdown(prog, schema=None):
     return prog, False
 
 
+def _is_lookup(lk, rk, S):
+    """True if every left key row matches exactly one right key row, by the schema:
+    lk holds values of stored column L.c (any subset of L's rows), c is never NULL
+    (key / not_null), and refs maps c to R.k, R's whole key; rk is R.k on all of R's
+    rows (domain T:R). Then each left value is in R.k (refs) exactly once (key)."""
+    if lk is None or rk is None or not lk.column or not rk.column or rk.kind != "col":
+        return False
+    lt, lc = lk.column.split(".", 1)
+    rt, rc = rk.column.split(".", 1)
+    if lc not in S.nn(lt) or rk.domain != "T:" + rt:
+        return False
+    refs = {k.lower(): v.lower() for k, v in S.table(lt).get("refs", {}).items()}
+    key = [k.lower() for k in S.table(rt).get("key", [])]
+    return refs.get(lc) == f"{rt}.{rc}" and key == [rc]
+
+
+def lookup_join(prog, schema=None):
+    """Rule 6: a join that is a lookup -> its left positions are 0..n-1.
+
+    When _is_lookup holds, the pairs are (0, j0), (1, j1), ...: one per left row,
+    in left order. So li is IOTA over the left keys; GATHER(x, li) then folds to x
+    (rule 3), and if ri is unused the join itself dies (dce). No errors are added:
+    refs requires comparable key types, so the join can't error either."""
+    if schema is None:
+        return prog, False
+    from .analyze import Schema
+    S, info, new, out, changed = Schema(schema), None, _fresh(prog), [], False
+    defs, uses = _defs(prog), _uses(prog)
+    for ins in prog:
+        if ins.op in ("HJOIN", "NLJOIN") and ins.dests[0] != ins.dests[1] and len(ins.srcs) >= 2 \
+                and all(kind(t) == "reg" for t in ins.srcs[:2]) and uses.get(ins.dests[0]) \
+                and defs[ins.srcs[1]].op == "LOAD":   # rk exactly R.k as stored
+            info = info or analyze(prog, schema)
+            if _is_lookup(info.get(ins.srcs[0]), info.get(ins.srcs[1]), S):
+                li, ri = ins.dests
+                cand = out + [Instr(ins.op, [new(), ri], ins.srcs), Instr("IOTA", [li], [ins.srcs[0]])] \
+                    + prog[len(out) + 1:]
+                # keep it only if, after rule 3 folds GATHER(x, IOTA), the program is cheaper
+                folded, _ = sorted_sort(cand, schema)
+                folded, _ = dce(cse(folded)[0])
+                try:
+                    if estimate(folded, schema) < estimate(prog, schema, info):
+                        return folded, True
+                except Exception:
+                    pass
+        out.append(ins)
+    return out, changed
+
+
 # cheap clean-up first, so the analysis-based rules see a smaller program
 PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown]
+# second phase: lookup joins rewrite the gathers that filter pushdown matches on,
+# so they run only once the first phase has settled
+LATE_PASSES = PASSES + [lookup_join]
 
 
 def run(prog, schema=None, deadline=None):
-    """Apply PASSES until none changes anything (or the deadline passes)."""
+    """Apply PASSES until none changes anything, then LATE_PASSES the same way
+    (or stop at the deadline: every pass output is a correct program)."""
     import time
-    for _ in range(50):
-        changed = False
-        for p in PASSES:
-            if deadline and time.monotonic() > deadline:
-                return prog              # every pass output is a correct program
-            prog, c = p(prog, schema)
-            changed |= c
-        if not changed:
-            break
+    for passes in (PASSES, LATE_PASSES):
+        for _ in range(50):
+            changed = False
+            for p in passes:
+                if deadline and time.monotonic() > deadline:
+                    return prog
+                prog, c = p(prog, schema)
+                changed |= c
+            if not changed:
+                break
     return prog
