@@ -98,7 +98,7 @@ def canon_text(prog):
 
 # ---------------------------------------------------------------- does the original specify order?
 def output_ordered(prog):
-    ordered, mono = set(), set()
+    ordered, mono, gall = set(), set(), set()
     o = lambda t: reg(t) in ordered
     for op, a in prog:
         if op == "OUT":
@@ -124,6 +124,10 @@ def output_ordered(prog):
             is_m = s in mono and i in mono
         elif op == "LOAD":
             is_o, is_m = False, False
+        elif op == "GALL":                 # one group: its aggregates are a single row
+            is_o, is_m = False, False
+        elif op in ("GCOUNT", "GCOUNTV", "GSUM", "GMIN", "GMAX", "GFIRST") and src and reg(src[0]) in gall:
+            is_o, is_m = False, op == "GFIRST"
         elif op in ("IDX", "GFIRST"):
             is_o, is_m = (op == "GFIRST" and bool(src) and o(src[0])), True
         elif op == "IOTA":
@@ -134,6 +138,9 @@ def output_ordered(prog):
             is_o, is_m = any(o(t) for t in src), False
         ordered.discard(d)
         mono.discard(d)
+        gall.discard(d)
+        if op == "GALL":
+            gall.add(d)
         if is_o:
             ordered.add(d)
         if is_m:
@@ -328,8 +335,10 @@ def instrument(prog, no_cut=False):
                     add_edge(a[0], nd, dom[lk])
                 if dom.get(rk):
                     add_edge(a[1], nd, dom[rk])
-        elif op in ("GROUP", "GALL"):
+        elif op == "GROUP":
             gsets[d] = (dom.get(regs[0]) if regs else None, new_dom())
+        elif op == "GALL":                 # a single group (GFIRST may be NULL): no row to trace keys to
+            gsets[d] = (None, new_dom())
         elif op in ("GCOUNT", "GCOUNTV", "GSUM", "GMIN", "GMAX", "GFIRST"):
             g = regs[0] if regs else None
             kd, gd = gsets.get(g, (None, None))

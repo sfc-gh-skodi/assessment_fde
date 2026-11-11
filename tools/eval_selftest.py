@@ -97,14 +97,17 @@ check("ORDER", "sort the RIGHT join key only -> unordered",
       O("LOAD a, t.x\nLOAD k, u.k\nSORT s, k ASC NF\nGATHER kk, k, s\nHJOIN l, r, a, kk\nGATHER x, a, l\nOUT x\n"), False)
 check("ORDER", "sort then GROUP: groups numbered in sorted order",
       O("LOAD a, t.x\nSORT s, a ASC NF\nGATHER b, a, s\nGROUP g, b\nGCOUNT c, g\nOUT c\n"), True)
+check("ORDER", "sorted rows aggregated by GALL -> one row, unordered",
+      O("LOAD a, t.x\nSORT s, a ASC NF\nGATHER b, a, s\nGALL g, b\nGSUM c, g, b\nOUT c\n"), False)
 check("ORDER", "TOPK -> ordered", O("LOAD a, t.x\nTOPK s, 3, a DESC NL\nGATHER b, a, s\nOUT b\n"), True)
 check("ORDER", "element-wise op on sorted column", O("LOAD a, t.x\nSORT s, a ASC NF\nGATHER b, a, s\nADD c, b, 1\nOUT c\n"), True)
 check("ORDER", "';' inside a string literal", O("LOAD a, t.s\nSORT s, a ASC NF\nGATHER b, a, s\nCAT c, b, ';x'\nOUT c\n"), True)
 check("ORDER", "comment mentioning SORT", O("LOAD a, t.x\nOUT a ; SORT s, a ASC NF\n"), False)
 check("ORDER", "register names case-sensitive (s vs S)", O("LOAD a, t.x\nSORT S, a ASC NF\nIOTA s, a\nGATHER b, a, s\nOUT b\n"), False)
-for f in sorted(os.listdir(os.path.join(vm.BUNDLE, "examples", "programs"))):
-    check("ORDER", f"example {f} is order-specified",
-          C.output_ordered(P(open(os.path.join(vm.BUNDLE, "examples", "programs", f)).read())), True)
+for f in sorted(x for x in os.listdir(os.path.join(vm.BUNDLE, "examples", "programs")) if x.endswith(".mini")):
+    want = f != "q0004.mini"     # q0004 ends in a GALL total: one row, so its order is moot
+    check("ORDER", f"example {f} is order-specified: {want}",
+          C.output_ordered(P(open(os.path.join(vm.BUNDLE, "examples", "programs", f)).read())), want)
 
 # ---------------- TYPES ----------------
 T = lambda t, s: C.out_types(P(t), s)
