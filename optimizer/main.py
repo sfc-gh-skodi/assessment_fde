@@ -20,7 +20,7 @@ def optimize(text, schema):
     t0 = time.monotonic()
     prog = ir.to_ssa(ir.parse(text))                    # 1
     before = cost.estimate(prog, schema)                 # 2 + 4 (annotate inside)
-    new = passes.run(prog, deadline=t0 + DEADLINE_S)     # 3
+    new = passes.run(prog, schema, deadline=t0 + DEADLINE_S)     # 3
     analyze.analyze(new, schema)                         # 2: re-annotate; raises on anything malformed
     after = cost.estimate(new, schema)                   # 4
     if after >= before or time.monotonic() - t0 > DEADLINE_S:

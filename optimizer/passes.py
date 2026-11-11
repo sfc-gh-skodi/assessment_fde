@@ -18,7 +18,7 @@ def _rename(tok, sub):
     return tok.replace(r, sub[r], 1) if r in sub else tok
 
 
-def dce(prog):
+def dce(prog, schema=None):
     live = set()
     keep = []
     for ins in reversed(prog):
@@ -46,7 +46,7 @@ def _cse_key(op, srcs, same_dest):
     return (op, tuple(srcs), same_dest)
 
 
-def cse(prog):
+def cse(prog, schema=None):
     seen, sub, out, changed = {}, {}, [], False
     for ins in prog:
         srcs = [_rename(t, sub) for t in ins.srcs]
@@ -72,16 +72,64 @@ def cse(prog):
     return out, changed
 
 
-PASSES = [cse, dce]
+def _defs(prog):
+    return {d: ins for ins in prog for d in ins.dests}
 
 
-def run(prog, deadline=None):
+def _fresh(prog):
+    """-> new_name(): register names not used anywhere in prog."""
+    taken = {d for ins in prog for d in ins.dests}
+    n = [0]
+
+    def new():
+        while True:
+            n[0] += 1
+            name = f"t_{n[0]}"
+            if name not in taken:
+                taken.add(name)
+                return name
+    return new
+
+
+def gather_chain(prog, schema=None):
+    """Rule 1: GATHER(GATHER(s, i), j) -> GATHER(s, GATHER(i, j)).
+
+    d[k] = s[i[j[k]]] either way. The composed form only reads the entries of i
+    that j picks, so it can only drop an error (an out-of-range i entry j skips),
+    never add one. Many columns gathered by the same i then j share one GATHER(i, j)
+    (cse), and the inner GATHER(s, i) dies (dce)."""
+    defs, new, out, changed = _defs(prog), _fresh(prog), [], False
+    # only when every use of the inner GATHER is as a GATHER source, so it dies;
+    # otherwise the rewrite adds a GATHER(i, j) and saves nothing
+    other_use = set()
+    for ins in prog:
+        for k, t in enumerate(ins.srcs):
+            if kind(t) in ("reg", "key") and not (ins.op == "GATHER" and k == 0):
+                other_use.add(key_reg(t))
+    for ins in prog:
+        if ins.op == "GATHER" and kind(ins.srcs[0]) == "reg" and kind(ins.srcs[1]) == "reg":
+            inner = defs.get(ins.srcs[0])
+            if (inner is not None and inner.op == "GATHER" and inner.dests[0] not in other_use
+                    and all(kind(t) == "reg" for t in inner.srcs)):
+                s, i = inner.srcs
+                t = new()
+                out.append(Instr("GATHER", [t], [i, ins.srcs[1]]))
+                ins = Instr("GATHER", ins.dests, [s, t])
+                changed = True
+        out.append(ins)
+    return out, changed
+
+
+PASSES = [gather_chain, cse, dce]
+
+
+def run(prog, schema=None, deadline=None):
     """Apply PASSES until none changes anything (or the deadline passes)."""
     import time
     for _ in range(50):
         changed = False
         for p in PASSES:
-            prog, c = p(prog)
+            prog, c = p(prog, schema)
             changed |= c
         if not changed or (deadline and time.monotonic() > deadline):
             break
