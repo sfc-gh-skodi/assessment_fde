@@ -679,8 +679,48 @@ def range_fold(prog, schema=None):
     return out, changed
 
 
+def sort_slice_topk(prog, schema=None):
+    """Rule 8: SORT + SLICE -> TOPK.
+
+    a) SLICE(GATHER(x, i), n) -> GATHER(x, SLICE(i, n)): both are the first n of
+       x[i[k]]; the new form reads fewer entries of i, so it only drops errors.
+    b) SLICE(SORT(keys), n) -> TOPK(n, keys): TOPK is defined as the first n
+       positions of the order SORT gives for the same keys (docs/instructions/
+       sorting.md), ties included. Kept only if the estimated cost drops (the SORT
+       may still be needed elsewhere)."""
+    if schema is None:
+        return prog, False
+    defs, new, out, changed = _defs(prog), _fresh(prog), [], False
+    for ins in prog:
+        if ins.op == "SLICE" and kind(ins.srcs[0]) == "reg":
+            d = defs.get(ins.srcs[0])
+            if d is not None and d.op == "GATHER" and all(kind(t) == "reg" for t in d.srcs) \
+                    and getattr(defs.get(d.srcs[1]), "op", None) == "SORT":   # only to expose (b)
+                t = new()
+                out.append(Instr("SLICE", [t], [d.srcs[1], ins.srcs[1]]))
+                out.append(Instr("GATHER", ins.dests, [d.srcs[0], t]))
+                changed = True
+                continue
+        out.append(ins)
+    if changed:
+        return out, True
+    for k, ins in enumerate(prog):
+        if ins.op == "SLICE" and kind(ins.srcs[0]) == "reg":
+            d = defs.get(ins.srcs[0])
+            if d is not None and d.op == "SORT" and re.match(r"^\d+$", ins.srcs[1]) and int(ins.srcs[1]) >= 1:
+                cand = prog[:k] + [Instr("TOPK", ins.dests, [ins.srcs[1]] + d.srcs)] + prog[k + 1:]
+                cand, _ = dce(cand)
+                try:
+                    if estimate(cand, schema) < estimate(prog, schema):
+                        return cand, True
+                except Exception:
+                    pass
+    return prog, False
+
+
 # cheap clean-up first, so the analysis-based rules see a smaller program
-PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown, range_fold]
+PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown, range_fold,
+          sort_slice_topk]
 # second phase: lookup joins rewrite the gathers that filter pushdown matches on,
 # so they run only once the first phase has settled
 LATE_PASSES = PASSES + [lookup_join]
