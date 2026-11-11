@@ -169,7 +169,7 @@ def write_git_history():
     os.makedirs(gh, exist_ok=True)
     git = lambda *a: subprocess.run(["git", "-C", REPO, *a], capture_output=True, text=True).stdout
     open(os.path.join(gh, "git_log.txt"), "w").write(git("log", "--stat", "--format=fuller", "--all"))
-    open(os.path.join(gh, "git_log_patch.txt"), "w").write(git("log", "-p", "--format=fuller", "--all"))
+    open(os.path.join(gh, "git_log_patch.txt"), "w").write(git("log", "-p", "-M", "--format=fuller", "--all"))
     open(os.path.join(gh, "git_reflog.txt"), "w").write(git("reflog", "--date=iso"))
 
 

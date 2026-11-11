@@ -1,3 +1,232 @@
+commit ca9a641ac5e9d19045e721a2e0b46cac4847050a
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 07:35:16 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 07:35:16 2026 -0500
+
+    Fix paths after the reorganisation; keep the patch history out of the repo
+    
+    Tools, evaluator and hook now treat minivm-takehome/ as the bundle root: run outputs
+    go to tests/runs/, prototypes are read from Pre_Build_inputs/, and the session hook
+    finds the git root and the exporter at their new places. Docs point to the new
+    paths. git_log_patch.txt (~64 MB, grows each commit) ships in the zip only.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .gitignore                                         |      2 +
+ ai-sessions/git-history/git_log_patch.txt          | 274694 ------------------
+ ai-sessions/prompts/INDEX.md                       |      2 +-
+ ai-sessions/prompts/c9f778f7_user_prompts.md       |     18 +-
+ ...778f7-7883-4ba4-8fe8-befd93970962.history.jsonl |     25 +
+ .../raw/c9f778f7-7883-4ba4-8fe8-befd93970962.json  |     32 +-
+ ...688c6-2dd5-4500-a93d-ca38d871240b.history.jsonl |      8 +
+ .../raw/d65688c6-2dd5-4500-a93d-ca38d871240b.json  |     26 +-
+ minivm-takehome/docs/3.PROGRESS.md                 |     10 +-
+ minivm-takehome/docs/4.FUTURE_PLAN.md              |     12 +-
+ minivm-takehome/docs/5.SUBMISSION.md               |     28 +-
+ minivm-takehome/evaluator/vm.py                    |      2 +-
+ minivm-takehome/tests/runbook.md                   |      2 +-
+ minivm-takehome/tools/bench.py                     |      6 +-
+ minivm-takehome/tools/fakes.py                     |      2 +-
+ minivm-takehome/tools/hooks/export_session_hook.sh |     11 +-
+ minivm-takehome/tools/loop.py                      |     14 +-
+ minivm-takehome/tools/make_stress.py               |      4 +-
+ minivm-takehome/tools/make_testdata.py             |      4 +-
+ minivm-takehome/tools/meta_eval.py                 |      6 +-
+ 20 files changed, 135 insertions(+), 274773 deletions(-)
+
+commit 12eef6eecca3fd92525d8bd3c5163d987ab7b066
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 07:34:03 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 07:34:03 2026 -0500
+
+    BUILD_SESSION.html: add round 3 (register reuse, filter pushdown, lookup joins, range folds, SORT+SLICE->TOPK)
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ ai-sessions/BUILD_SESSION.html | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit da31d6c3b6af29d1088910d102dfe79f66083f24
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 07:29:07 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 07:29:07 2026 -0500
+
+    Reorganise into minivm-takehome/ and ai-sessions/; restore prompts under ai-sessions/prompts
+    
+    Code, tests and tools move under minivm-takehome/, docs are numbered in
+    minivm-takehome/docs/, pre-build notes and prototypes go to Pre_Build_inputs/, and
+    prompts and git history live in ai-sessions/. The session exporter now finds the
+    repo root itself and writes to the new paths. .gitignore covers the generated data
+    at its new paths.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .apd/hooks.log                                     |     2 +
+ .gitignore                                         |     7 +
+ .../cortex/plans/golden-misses-rules.plan.md       |    90 +
+ ai-sessions/BUILD_SESSION.html                     |   105 +-
+ .../git-history}/git_log.txt                       |    72 +
+ .../git-history}/git_log_patch.txt                 | 37224 +++++++++++++++++++
+ .../git-history}/git_reflog.txt                    |     3 +
+ .../prompts}/2502a2eb_subagent_prompts.md          |     0
+ .../prompts}/2502a2eb_user_prompts.md              |     0
+ {prompts => ai-sessions/prompts}/INDEX.md          |     6 +-
+ .../prompts}/c9f778f7_subagent_prompts.md          |     0
+ .../prompts}/c9f778f7_user_prompts.md              |    36 +-
+ .../prompts}/cf78df4d_subagent_prompts.md          |     0
+ .../prompts}/cf78df4d_user_prompts.md              |     0
+ .../prompts}/d65688c6_subagent_prompts.md          |     0
+ .../prompts}/d65688c6_user_prompts.md              |     6 +-
+ .../prompts}/fbd23c3f_subagent_prompts.md          |     0
+ .../prompts}/fbd23c3f_user_prompts.md              |     0
+ ...778f7-7883-4ba4-8fe8-befd93970962.history.jsonl |   129 +
+ .../raw/c9f778f7-7883-4ba4-8fe8-befd93970962.json  |    32 +-
+ .../raw/cf78df4d-6085-4d1f-90b5-dfd32d2a4e14.json  |     6 +-
+ ...688c6-2dd5-4500-a93d-ca38d871240b.history.jsonl |    12 +
+ .../raw/d65688c6-2dd5-4500-a93d-ca38d871240b.json  |    40 +-
+ .../raw/fbd23c3f-608b-4330-a7ac-860d8f7fb94a.json  |     6 +-
+ evaluate                                           |     3 -
+ .../Pre_Build_inputs/notes}/INITIAL_PROMPT.md      |     0
+ .../Pre_Build_inputs/notes}/examples.md            |     0
+ .../Pre_Build_inputs/notes}/research_evaluator.md  |     0
+ .../Pre_Build_inputs/notes}/research_optimizer.md  |     0
+ .../notes}/research_working_model.md               |     0
+ .../Pre_Build_inputs/notes}/tricky_rules.md        |     0
+ .../Pre_Build_inputs/prototype_code}/README.md     |     0
+ .../prototype_code}/evaluator_agent/eval-proto.py  |     0
+ .../prototype_code}/evaluator_agent/fake_opt.py    |     0
+ .../prototype_code}/evaluator_agent/meta_eval.py   |     0
+ .../prototype_code}/evaluator_agent/meta_report.md |     0
+ .../evaluator_agent/tricky_checks.py               |     0
+ .../prototype_code}/optimizer_agent/check.py       |     0
+ .../prototype_code}/optimizer_agent/cmp.py         |     0
+ .../prototype_code}/optimizer_agent/gen_data.py    |     0
+ .../prototype_code}/optimizer_agent/hand_opt.sh    |     0
+ .../optimizer_agent/make_adv_data.py               |     0
+ .../prototype_code}/optimizer_agent/naive_opt.sh   |     0
+ .../optimizer_agent/q0001.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0001.opt.mini |     0
+ .../optimizer_agent/q0002.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0002.opt.mini |     0
+ .../optimizer_agent/q0003.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0003.opt.mini |     0
+ .../optimizer_agent/q0004.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0004.opt.mini |     0
+ .../optimizer_agent/q0005.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0005.opt.mini |     0
+ .../optimizer_agent/q0006.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0006.opt.mini |     0
+ .../optimizer_agent/q0007.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0007.opt.mini |     0
+ .../optimizer_agent/q0008.naive.mini               |     0
+ .../prototype_code}/optimizer_agent/q0008.opt.mini |     0
+ .../Pre_Build_inputs/prototype_code}/run_all.sh    |     0
+ .../docs/1.BUILD_PLAN.md                           |     0
+ .../docs/2.PLAN_REVIEW.md                          |     0
+ progress.md => minivm-takehome/docs/3.PROGRESS.md  |     0
+ .../docs/4.FUTURE_PLAN.md                          |     0
+ .../docs/5.SUBMISSION.md                           |     0
+ minivm-takehome/evaluate                           |     2 +-
+ .../evaluator}/__init__.py                         |     0
+ .../evaluator}/compare.py                          |     0
+ .../evaluator}/datagen.py                          |     0
+ {evaluator => minivm-takehome/evaluator}/main.py   |     0
+ {evaluator => minivm-takehome/evaluator}/progen.py |     0
+ {evaluator => minivm-takehome/evaluator}/vm.py     |     0
+ minivm-takehome/optimize                           |     4 +-
+ .../optimizer}/__init__.py                         |     0
+ .../optimizer}/analyze.py                          |     0
+ {optimizer => minivm-takehome/optimizer}/cost.py   |     0
+ {optimizer => minivm-takehome/optimizer}/ir.py     |     0
+ {optimizer => minivm-takehome/optimizer}/main.py   |     0
+ {optimizer => minivm-takehome/optimizer}/passes.py |     0
+ {tests => minivm-takehome/tests}/baselines.json    |     0
+ .../tests}/cases/complex/c01_star_group.mini       |     0
+ .../tests}/cases/complex/c02_rank_per_group.mini   |     0
+ .../tests}/cases/complex/c03_semijoin_dedup.mini   |     0
+ .../tests}/cases/complex/c04_group_broadcast.mini  |     0
+ .../tests}/cases/complex/c05_four_join_topk.mini   |     0
+ .../tests}/cases/complex/c06_self_count_fewer.mini |     0
+ .../cases/complex/c07_selfjoin_gmax_nullkeys.mini  |     0
+ .../tests}/cases/complex/c08_category_parent.mini  |     0
+ .../tests}/cases/complex/c09_star_four_join.mini   |     0
+ .../tests}/cases/complex/c10_paid_ratio_div.mini   |     0
+ .../cases/complex/c11_top2_lines_per_order.mini    |     0
+ .../cases/complex/c12_semijoin_nokey_label.mini    |     0
+ .../tests}/cases/easy/e01_dead_loads.mini          |     0
+ .../tests}/cases/easy/e02_cse.mini                 |     0
+ .../tests}/cases/easy/e03_sort_on_sorted.mini      |     0
+ .../tests}/cases/easy/e04_always_true.mini         |     0
+ .../tests}/cases/easy/e05_check_nullable_trap.mini |     0
+ .../tests}/cases/easy/e06_nljoin.mini              |     0
+ .../tests}/cases/easy/e07_compute_then_filter.mini |     0
+ .../tests}/cases/easy/e08_empty_gall.mini          |     0
+ .../tests}/cases/easy/e09_overwrite.mini           |     0
+ .../tests}/cases/easy/e10_div_guarded_trap.mini    |     0
+ .../tests}/cases/easy/e11_dead_sort.mini           |     0
+ .../tests}/cases/easy/e12_unsorted_output.mini     |     0
+ .../tests}/cases/easy/e13_num_scale_gmin.mini      |     0
+ .../tests}/cases/easy/e14_unicode_upper_left.mini  |     0
+ .../tests}/cases/easy/e15_empty_group_vs_gall.mini |     0
+ .../tests}/cases/easy/e16_commutative_cse.mini     |     0
+ .../tests}/cases/medium/m01_sort_slice_topk.mini   |     0
+ .../tests}/cases/medium/m02_sort_then_filter.mini  |     0
+ .../tests}/cases/medium/m03_pushdown_one_join.mini |     0
+ .../tests}/cases/medium/m04_lookup_label.mini      |     0
+ .../tests}/cases/medium/m05_group_sorted.mini      |     0
+ .../tests}/cases/medium/m06_customers_nokey.mini   |     0
+ .../tests}/cases/medium/m07_nullable_fk.mini       |     0
+ .../tests}/cases/medium/m08_payments_lookup.mini   |     0
+ .../tests}/cases/medium/m09_topk_after_filter.mini |     0
+ .../tests}/cases/medium/m10_mixed_ties.mini        |     0
+ .../tests}/cases/medium/m11_topk_ties.mini         |     0
+ .../tests}/cases/medium/m12_nulleq_join.mini       |     0
+ .../tests}/cases/medium/m13_sorted_filtered.mini   |     0
+ .../tests}/cases/medium/m14_sort_desc_ties.mini    |     0
+ .../tests}/cases/medium/m15_label_before_join.mini |     0
+ .../regressions/g01_selfjoin_max_null_keys.mini    |     0
+ .../regressions/g03_check_bound_null_fold.mini     |     0
+ .../regressions/g06_tautology_three_valued.mini    |     0
+ .../tests}/regressions/r_isnull_two_operands.mini  |     0
+ {tests => minivm-takehome/tests}/runbook.md        |     0
+ .../tests/runs}/evaluator_iterations.md            |     0
+ .../tests/runs}/meta_report.md                     |     0
+ .../tests/runs}/testsuite_iterations.md            |     0
+ .../tests}/schemas/hr/data.json                    |     0
+ .../tests}/schemas/hr/programs/h01_dead_cse.mini   |     0
+ .../schemas/hr/programs/h02_sorted_composite.mini  |     0
+ .../hr/programs/h03_nullable_check_trap.mini       |     0
+ .../schemas/hr/programs/h04_lookup_label.mini      |     0
+ .../schemas/hr/programs/h05_topk_num_ties.mini     |     0
+ .../schemas/hr/programs/h06_nokey_semijoin.mini    |     0
+ .../schemas/hr/programs/h07_selfref_manager.mini   |     0
+ .../schemas/hr/programs/h08_parent_rollup.mini     |     0
+ .../hr/programs/h09_top_earner_per_dept.mini       |     0
+ .../schemas/hr/programs/h10_shift_avg_topk.mini    |     0
+ .../hr/programs/h11_nullife_selfjoin_gmax.mini     |     0
+ .../tests}/schemas/hr/schema.json                  |     0
+ {tools => minivm-takehome/tools}/bench.py          |     0
+ {tools => minivm-takehome/tools}/eval_selftest.py  |     0
+ {tools => minivm-takehome/tools}/export_session.py |    13 +-
+ {tools => minivm-takehome/tools}/fakes.py          |     0
+ .../tools}/hooks/export_session_hook.sh            |     0
+ {tools => minivm-takehome/tools}/identity_opt.sh   |     0
+ {tools => minivm-takehome/tools}/loop.py           |     0
+ {tools => minivm-takehome/tools}/make_stress.py    |     0
+ {tools => minivm-takehome/tools}/make_testdata.py  |     0
+ {tools => minivm-takehome/tools}/meta_eval.py      |     0
+ optimize                                           |     3 -
+ 155 files changed, 37738 insertions(+), 63 deletions(-)
+
 commit 64da402580f856577e0cd010c6000a0d6c9d84fe
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Wed Nov 11 07:12:03 2026 -0500
