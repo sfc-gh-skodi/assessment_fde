@@ -1,3 +1,4 @@
+acebb68 HEAD@{2026-11-11 08:11:39 -0500}: commit: Final clean-up: session pages in ai-sessions/session_summary/, AI_USAGE.md in ai-sessions/
 7341847 HEAD@{2026-11-11 07:52:52 -0500}: commit: Refresh session exports (d65688c6 latest turns) and git history
 8eebeda HEAD@{2026-11-11 07:46:45 -0500}: commit: Dump sessions c9f778f7 and d65688c6: prompts, raw files, git history, models, tokens, spend
 2bb5965 HEAD@{2026-11-11 07:40:05 -0500}: commit: Future plan: top-down by goal, evaluator-first priorities, targets and milestones

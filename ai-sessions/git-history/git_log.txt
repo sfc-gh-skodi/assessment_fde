@@ -1,3 +1,34 @@
+commit acebb6868bdd74a18be0caa67ab1aa3313e09f17
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 08:11:39 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 08:11:39 2026 -0500
+
+    Final clean-up: session pages in ai-sessions/session_summary/, AI_USAGE.md in ai-sessions/
+    
+    The last two sessions' exact per-thread usage folds into ai-sessions/AI_USAGE.md;
+    docs and session pages point to the new paths. Session exports refreshed.
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ AI_USAGE.md => ai-sessions/AI_USAGE.md             | 14 +++++-
+ ai-sessions/SESSION_USAGE.md                       | 53 ----------------------
+ ai-sessions/git-history/git_log.txt                | 20 ++++++++
+ ai-sessions/git-history/git_reflog.txt             |  1 +
+ ai-sessions/prompts/INDEX.md                       |  2 +-
+ ai-sessions/prompts/c9f778f7_user_prompts.md       | 10 +++-
+ ...778f7-7883-4ba4-8fe8-befd93970962.history.jsonl | 24 ++++++++++
+ .../raw/c9f778f7-7883-4ba4-8fe8-befd93970962.json  | 32 ++++++-------
+ .../1.PLAN_SESSION_MENTAL_MODEL.html}              |  0
+ .../2.REVIEW_SESSION.html}                         |  0
+ .../3.BUILD_SESSION.html}                          |  0
+ .../4.TEST_SESSION.html}                           |  2 +-
+ minivm-takehome/docs/4.FUTURE_PLAN.md              |  2 +-
+ minivm-takehome/docs/5.SUBMISSION.md               |  6 +--
+ 14 files changed, 88 insertions(+), 78 deletions(-)
+
 commit 7341847f5447f0b78f5b84673267c9feccdc679b
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Wed Nov 11 07:52:52 2026 -0500
