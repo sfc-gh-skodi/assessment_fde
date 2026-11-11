@@ -1,0 +1,12 @@
+; Orders whose status-plus-note label exists: CAT is NULL when either input is NULL.
+; (covers ISNULL over a two-operand expression; o_note is often NULL)
+LOAD   id, orders.o_id
+LOAD   st, orders.o_status
+LOAD   note, orders.o_note
+CAT    lbl, st, note
+ISNULL n, lbl
+NOT    has, n
+IDX    i, has
+GATHER a, id, i
+GATHER b, lbl, i
+OUT    a, b

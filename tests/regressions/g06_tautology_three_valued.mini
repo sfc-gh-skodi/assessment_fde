@@ -1,0 +1,10 @@
+; All orders, through an old "amount is big or not big" check.
+LOAD id, orders.o_id
+LOAD amt, orders.o_amt
+GT   big, amt, 500.00
+NOT  small, big
+OR   either, big, small        ; "always true"
+IDX  i, either
+GATHER a, id, i
+GATHER b, amt, i
+OUT  a, b

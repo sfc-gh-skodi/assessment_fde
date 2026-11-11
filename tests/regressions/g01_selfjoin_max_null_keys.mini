@@ -1,0 +1,16 @@
+; For every order, the largest quantity among orders with the same cleaned-up status.
+; legacy: self-join, then group (WH-2210)
+load    id, orders.o_id
+load    st, orders.o_status
+load    q, orders.o_qty
+nullife s1, st
+rtrim   s2, s1
+upper   k, s2
+hjoin   a, b, k, k            ; every pair of orders with the same status
+gather  qb, q, b
+group   g, a
+gmax    mx, g, qb
+gfirst  f, g
+gather  row, a, f
+gather  oid, id, row
+out     oid, mx

@@ -718,9 +718,67 @@ def sort_slice_topk(prog, schema=None):
     return prog, False
 
 
+# Element-wise ops whose result is NULL exactly when an operand is NULL: every op on
+# the arithmetic, strings and dates pages, plus the comparisons and NOT
+# (docs/instructions/README.md#element-wise-instructions). Logic ops with their own
+# NULL rules are left out.
+NULL_IN_NULL_OUT = ELEMENTWISE - {"IS", "ISNULL", "NVL", "IF", "NULLIF", "NULLIFE", "AND", "OR"}
+
+
+def idx_tautology(prog, schema=None):
+    """Rule 9: OR(x, NOT x) read only by IDX -> NOT ISNULL(x).
+
+    For a BOOL x, OR(x, NOT x) is TRUE when x is TRUE or FALSE and NULL when x is
+    NULL (three-valued logic, docs/instructions/logic.md#and-or). NOT ISNULL(x) is
+    TRUE / TRUE / FALSE. IDX keeps only TRUE positions and drops FALSE and NULL alike
+    (columns.md#idx), so both select the same rows. Only when every use is an IDX:
+    elsewhere NULL and FALSE differ. A non-BOOL x made the original error; dropping
+    an error is allowed."""
+    defs, uses, new, out, changed = _defs(prog), _uses(prog), _fresh(prog), [], False
+
+    def negates(n, x):
+        d = defs.get(n)
+        return d is not None and d.op == "NOT" and d.srcs == [x]
+
+    for ins in prog:
+        if ins.op == "OR" and len(ins.srcs) == 2 and all(kind(t) == "reg" for t in ins.srcs):
+            a, b = ins.srcs
+            x = a if negates(b, a) else b if negates(a, b) else None
+            us = uses.get(ins.dests[0], [])
+            if x is not None and us and all(u.op == "IDX" and k == 0 for u, k in us):
+                t = new()
+                out.append(Instr("ISNULL", [t], [x]))
+                out.append(Instr("NOT", ins.dests, [t]))
+                changed = True
+                continue
+        out.append(ins)
+    return out, changed
+
+
+def isnull_push(prog, schema=None):
+    """Rule 10: ISNULL(E(a, lits...)) -> ISNULL(a), for E in NULL_IN_NULL_OUT with one
+    register operand and only non-NULL literals.
+
+    E is NULL exactly where a is NULL; elsewhere it gives a value or errors. So
+    ISNULL(E(...)) and ISNULL(a) agree on every row E doesn't error on, and dropping
+    E can only remove errors. E then dies (dce) if nothing else reads it."""
+    defs, out, changed = _defs(prog), [], False
+    for ins in prog:
+        if ins.op == "ISNULL" and kind(ins.srcs[0]) == "reg":
+            d = defs.get(ins.srcs[0])
+            if d is not None and d.op in NULL_IN_NULL_OUT and len(d.dests) == 1:
+                regs = [t for t in d.srcs if kind(t) == "reg"]
+                if len(regs) == 1 and all(t != "NULL" for t in d.srcs):
+                    out.append(Instr("ISNULL", ins.dests, regs))
+                    changed = True
+                    continue
+        out.append(ins)
+    return out, changed
+
+
 # cheap clean-up first, so the analysis-based rules see a smaller program
 PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown, range_fold,
-          sort_slice_topk]
+          sort_slice_topk, idx_tautology, isnull_push]
 # second phase: lookup joins rewrite the gathers that filter pushdown matches on,
 # so they run only once the first phase has settled
 LATE_PASSES = PASSES + [lookup_join]

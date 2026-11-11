@@ -682,7 +682,49 @@ MODES = {
     "b_gsum_nvl0":    ("buggy", "GSUM of a group with no non-NULL values gives 0 instead of NULL",
                        lambda p, s, f: E(after_op(p, "GSUM", lambda d: [["NVL", [d, d, "0"]]]))),
     "b_hjoin_dedup":  ("buggy", "self-join on a key keeps only the first match per left row (assumes unique keys)", None),
+    # buggy twins of the optimizer's rules 9-11 (the held-out traps 06, 03, 01)
+    "b_or_not_true":  ("buggy", "OR(x, NOT x) -> TRUE (NULL x was dropped by IDX)", lambda p, s, f: E(or_not_true(p))),
+    "b_check_nullable": ("buggy", "folds a comparison its check bounds decide, even on a nullable column",
+                       lambda p, s, f: E(check_nullable(p, s))),
+    "b_isnull_two_ops": ("buggy", "ISNULL(E(a, b)) -> ISNULL(a) (forgets b's NULLs)", lambda p, s, f: E(isnull_two_ops(p))),
 }
+
+
+def or_not_true(prog):
+    nots = {ops[0]: ops[1] for op, ops in prog if op == "NOT" and len(ops) == 2}
+    return each(prog, lambda o, a: o == "OR" and len(a) == 3 and (nots.get(a[2]) == a[1] or nots.get(a[1]) == a[2]),
+                lambda o, a: ["FILL", [a[0], "TRUE", a[1]]])
+
+
+def check_nullable(prog, sch):
+    """'col op lit' -> FILL TRUE when the column's check bounds make it true, NULLs ignored."""
+    lm = load_map(prog)
+    out = []
+    for i, (op, ops) in enumerate(prog):
+        tc = lm[i].get(ops[1]) if op in ("GT", "GE", "LT", "LE") and len(ops) == 3 else None
+        if tc and is_num_lit(ops[2]):
+            t, c = tc.split(".")
+            chk = {k.lower(): v for k, v in sch.table(t).get("check", {}).items()}.get(c.lower())
+            if chk:
+                from decimal import Decimal
+                lo, hi = (None if x is None else Decimal(str(x)) for x in chk)
+                v = Decimal(ops[2])
+                holds = {"GE": lo is not None and lo >= v, "GT": lo is not None and lo > v,
+                         "LE": hi is not None and hi <= v, "LT": hi is not None and hi < v}[op]
+                if holds:
+                    out.append(["FILL", [ops[0], "TRUE", ops[1]]])
+                    continue
+        out.append([op, ops])
+    return out
+
+
+def isnull_two_ops(prog):
+    defs = {ops[0]: (op, ops) for op, ops in prog if op in ELEMENTWISE and len(ops) == 3}
+    def pick(o, a):
+        d = defs.get(a[1])
+        return d is not None and all(is_reg(t) for t in d[1][1:]) and d[1][1] != d[1][2]
+    return each(prog, lambda o, a: o == "ISNULL" and len(a) == 2 and pick(o, a),
+                lambda o, a: ["ISNULL", [a[0], defs[a[1]][1][1]]])
 
 
 def drop_notnull(prog):

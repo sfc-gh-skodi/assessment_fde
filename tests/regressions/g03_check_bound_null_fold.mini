@@ -1,0 +1,14 @@
+; Line prices that pass the old loader's sanity checks.
+LOAD lo, lines.l_order
+LOAD ln, lines.l_no
+LOAD lq, lines.l_qty
+LOAD lp, lines.l_price
+LOAD ld, lines.l_disc
+GE   okq, lq, 1               ; quantity at least 1
+GE   okd, ld, 0               ; discount not negative
+AND  ok, okq, okd
+IDX  i, ok
+GATHER a, lo, i
+GATHER b, ln, i
+GATHER c, lp, i
+OUT  a, b, c
