@@ -686,6 +686,8 @@ MODES = {
     "b_or_not_true":  ("buggy", "OR(x, NOT x) -> TRUE (NULL x was dropped by IDX)", lambda p, s, f: E(or_not_true(p))),
     "b_check_nullable": ("buggy", "folds a comparison its check bounds decide, even on a nullable column",
                        lambda p, s, f: E(check_nullable(p, s))),
+    "b_selfjoin_keep_null": ("buggy", "self-join + GROUP over left rows -> GROUP the key on all rows (keeps NULL keys)",
+                       lambda p, s, f: E(selfjoin_keep_null(p))),
     "b_isnull_two_ops": ("buggy", "ISNULL(E(a, b)) -> ISNULL(a) (forgets b's NULLs)", lambda p, s, f: E(isnull_two_ops(p))),
 }
 
@@ -716,6 +718,32 @@ def check_nullable(prog, sch):
                     continue
         out.append([op, ops])
     return out
+
+
+def selfjoin_keep_null(prog):
+    """HJOIN a, b, k, k / GROUP g, a / AGG m, g, GATHER(s, b) / GATHER r, a, GFIRST(g)
+    -> GROUP g2, k over every row (the NULL keys become a group), r = 0..n-1."""
+    joins = [(ops[0], ops[1], ops[2]) for op, ops in prog
+             if op in TWO_DEST and len(ops) == 4 and ops[0] != ops[1] and ops[2] == ops[3]]
+    if not joins:
+        return prog
+    a, b, k = joins[0]
+    groups = {ops[0] for op, ops in prog if op == "GROUP" and ops[1:] == [a]}
+    firsts = {ops[0] for op, ops in prog if op == "GFIRST" and ops[1] in groups}
+    viab = {ops[0]: ops[1] for op, ops in prog if op == "GATHER" and ops[2] == b}
+    if not groups:
+        return prog
+    out = []
+    for op, ops in prog:
+        if op in TWO_DEST and ops[:2] == [a, b]:
+            out += [["IOTA", ["_fksj", k]], ["GROUP", ["_fksg", k]], ["GID", ["_fksi", "_fksg"]]]
+        elif op in ("GMAX", "GMIN", "GSUM", "GCOUNTV") and ops[1] in groups and ops[2] in viab:
+            out += [[op, ["_fksm", "_fksg", viab[ops[2]]]], ["GATHER", [ops[0], "_fksm", "_fksi"]]]
+        elif op == "GATHER" and ops[1] == a and ops[2] in firsts:
+            out.append(["GATHER", [ops[0], "_fksj", "_fksj"]])
+        else:
+            out.append([op, ops])
+    return dce(out)
 
 
 def isnull_two_ops(prog):

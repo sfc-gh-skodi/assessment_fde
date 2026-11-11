@@ -776,9 +776,110 @@ def isnull_push(prog, schema=None):
     return out, changed
 
 
+SELFJOIN_AGGS = {"GMAX", "GMIN", "GSUM", "GCOUNTV", "GCOUNT"}
+
+
+def selfjoin_group(prog, schema=None):
+    """Rule 11: per-row aggregate over a self-join -> drop NULL keys, then GROUP.
+
+      HJOIN a, b, k, k          every pair (i, j) with k[i] = k[j], ordered by i then j
+      GATHER x, s, b            s at the matched rows
+      GROUP g, a                one group per left row i, numbered in order of i
+      AGG m, g, x               aggregate over the rows j matching i
+      GFIRST f, g ; GATHER r, a, f    r[n] = the n-th left row
+
+    A NULL key matches nothing (no NULLEQ), and every non-NULL key matches itself, so
+    the left rows are exactly the non-NULL-key rows j = IDX(NOT ISNULL k), ascending.
+    The rows matching i are the rows j with k[j] = k[i], ascending, which is i's
+    group in GROUP(k[j]) (keys compared as in Ordering in both, joins.md and
+    grouping.md). So r -> j, and m -> GATHER(AGG(GROUP(k[j]), s[j]), GID): the same
+    values over the same rows in the same order, so first-of-equals (GMIN/GMAX) and
+    exact GSUM agree. GROUP errors on incomparable keys exactly where HJOIN does.
+    Every use of a, b, g, f and the gathered x must be one of the above, or no rewrite.
+    Kept only if the estimated cost drops."""
+    if schema is None:
+        return prog, False
+    defs, uses, new = _defs(prog), _uses(prog), _fresh(prog)
+    for ins in prog:
+        if ins.op not in ("HJOIN", "NLJOIN") or len(ins.srcs) != 2 or ins.srcs[0] != ins.srcs[1] \
+                or kind(ins.srcs[0]) != "reg" or ins.dests[0] == ins.dests[1]:
+            continue
+        k, (a, b) = ins.srcs[0], ins.dests
+        ua, ub = uses.get(a, []), uses.get(b, [])
+        groups = [u for u, _ in ua if u.op == "GROUP"]
+        if len(groups) != 1 or groups[0].srcs != [a]:
+            continue
+        g = groups[0].dests[0]
+        xs = {}                                  # x -> s, for GATHER x, s, b
+        if not ub or any(u.op != "GATHER" or j != 1 or kind(u.srcs[0]) != "reg" for u, j in ub):
+            continue
+        for u, _ in ub:
+            xs[u.dests[0]] = u.srcs[0]
+        firsts, aggs, ok = set(), [], True
+        for u, j in uses.get(g, []):
+            if u.op == "GFIRST" and j == 0:
+                firsts.add(u.dests[0])
+            elif u.op == "GCOUNT" and j == 0 and len(u.srcs) == 1:
+                aggs.append(u)
+            elif u.op in SELFJOIN_AGGS and j == 0 and len(u.srcs) == 2 and u.srcs[1] in xs:
+                aggs.append(u)
+            else:
+                ok = False
+        reps = []                                # GATHER r, a, f
+        for u, j in ua:
+            if u is groups[0]:
+                continue
+            if u.op == "GATHER" and j == 0 and u.srcs[1] in firsts:
+                reps.append(u)
+            else:
+                ok = False
+        agg_ids = {id(u) for u in aggs}
+        for x in xs:                             # gathered columns feed only these aggregates
+            if any(id(u) not in agg_ids or j != 1 for u, j in uses.get(x, [])):
+                ok = False
+        for f in firsts:                         # GFIRST results feed only the representative gathers
+            if any(u.op != "GATHER" or j != 1 or u.srcs[0] != a for u, j in uses.get(f, [])):
+                ok = False
+        if not ok or not aggs or not reps:
+            continue
+        kn, kk, jr, kj, g2, gi = (new() for _ in range(6))
+        head = [Instr("ISNULL", [kn], [k]), Instr("NOT", [kk], [kn]), Instr("IDX", [jr], [kk]),
+                Instr("GATHER", [kj], [k, jr]), Instr("GROUP", [g2], [kj]), Instr("GID", [gi], [g2])]
+        rep_ids = {id(u) for u in reps}
+        out, sub = [], {}
+        for o in prog:
+            n = Instr(o.op, o.dests, [_rename(t, sub) for t in o.srcs])
+            if o is ins:
+                out.append(n)
+                out.extend(head)
+                continue
+            if id(o) in rep_ids:
+                sub[o.dests[0]] = jr
+                continue
+            if id(o) in agg_ids:
+                agg = o
+                m2 = new()
+                if agg.op == "GCOUNT":
+                    out.append(Instr("GCOUNT", [m2], [g2]))
+                else:
+                    sj = new()
+                    out.append(Instr("GATHER", [sj], [xs[agg.srcs[1]], jr]))
+                    out.append(Instr(agg.op, [m2], [g2, sj]))
+                out.append(Instr("GATHER", agg.dests, [m2, gi]))
+                continue
+            out.append(n)
+        cand, _ = dce(out)
+        try:
+            if estimate(cand, schema) < estimate(prog, schema):
+                return cand, True
+        except Exception:
+            pass
+    return prog, False
+
+
 # cheap clean-up first, so the analysis-based rules see a smaller program
 PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown, range_fold,
-          sort_slice_topk, idx_tautology, isnull_push]
+          sort_slice_topk, idx_tautology, isnull_push, selfjoin_group]
 # second phase: lookup joins rewrite the gathers that filter pushdown matches on,
 # so they run only once the first phase has settled
 LATE_PASSES = PASSES + [lookup_join]
