@@ -8,6 +8,8 @@ errors, anything goes).
   cse  common-subexpression elimination: an identical (op, operands) computed twice,
        e.g. the same column loaded twice, is computed once and reused
 """
+import re
+
 from .analyze import ELEMENTWISE, analyze, lit_type
 from .cost import estimate, instr_cost
 from .ir import Instr, key_reg, kind
@@ -563,8 +565,122 @@ def lookup_join(prog, schema=None):
     return out, changed
 
 
+def _bound(v, ty):
+    """A check bound or literal -> comparable value for column type ty, or None."""
+    from decimal import Decimal, InvalidOperation
+    if v is None:
+        return None
+    s = str(v).strip()
+    if ty == "DATE":
+        s = s.strip("#")
+        return s if re.match(r"^\d{4}-\d{2}-\d{2}$", s) else None
+    if ty in ("INT", "NUM"):
+        try:
+            return Decimal(s)
+        except InvalidOperation:
+            return None
+    return None
+
+
+def _decide(op, lo, hi, c):
+    """Can 'v op c' be decided for every v in [lo, hi] (None = open side)?
+    -> True / False / None."""
+    ge_c = lo is not None and lo >= c          # every v >= c
+    gt_c = lo is not None and lo > c
+    le_c = hi is not None and hi <= c
+    lt_c = hi is not None and hi < c
+    if op == "GE":
+        return True if ge_c else False if lt_c else None
+    if op == "GT":
+        return True if gt_c else False if le_c else None
+    if op == "LE":
+        return True if le_c else False if gt_c else None
+    if op == "LT":
+        return True if lt_c else False if ge_c else None
+    if op in ("EQ", "NE"):
+        never = gt_c or lt_c
+        always = lo is not None and hi is not None and lo == hi == c
+        r = False if never else True if always else None
+        return r if r is None or op == "EQ" else not r
+    return None
+
+
+BOOL_MAKERS = {"EQ", "NE", "LT", "LE", "GT", "GE", "IS", "AND", "OR", "NOT", "ISNULL"}
+
+
+def range_fold(prog, schema=None):
+    """Rule 7: fold comparisons the schema decides, then the logic around them.
+
+    'a op lit' -> FILL TRUE/FALSE when a is a stored column (any subset of its rows)
+    that is never NULL (key / not_null) and its check [lo, hi] decides the comparison
+    for every value. check alone isn't enough: it only bounds non-NULL values, and
+    NULL op lit is NULL. A stored column against a comparable literal can't error, so
+    nothing is lost. Then, with t / f a FILL TRUE / FALSE:
+      IDX t -> IOTA (every position)        NOT t -> f, NOT f -> t
+      AND x, t -> x   OR x, f -> x          (x made by a BOOL op: BOOL or NULL)
+      AND x, f -> f   OR x, t -> t          (also x BOOL: three-valued tables)
+    Constraints are true of every table set; stats are not used."""
+    if schema is None:
+        return prog, False
+    from .analyze import Schema
+    S, info = Schema(schema), analyze(prog, schema)
+    defs, out, changed, sub = _defs(prog), [], False, {}
+
+    def fill_of(t):
+        d = defs.get(t)
+        return d.srcs[0] if d is not None and d.op == "FILL" and d.srcs[0] in ("TRUE", "FALSE") else None
+
+    def is_bool(t):
+        d = defs.get(t)
+        return d is not None and (d.op in BOOL_MAKERS or fill_of(t) is not None)
+
+    for ins in prog:
+        ins = Instr(ins.op, ins.dests, [_rename(t, sub) for t in ins.srcs])
+        op, srcs = ins.op, ins.srcs
+        new_ins = None
+        if op in ("EQ", "NE", "LT", "LE", "GT", "GE") and len(srcs) == 2:
+            a, c, o = srcs[0], srcs[1], op
+            if kind(a) == "lit" and kind(c) == "reg":
+                a, c, o = c, a, FLIP.get(op, op)
+            r = info.get(a) if kind(a) == "reg" else None
+            if r is not None and kind(c) == "lit" and r.column and r.kind == "col" and r.type in ("INT", "NUM", "DATE"):
+                tab, col = r.column.split(".", 1)
+                lt = lit_type(c)
+                comparable = (lt == "DATE") if r.type == "DATE" else lt in ("INT", "NUM")
+                checks = {k.lower(): v for k, v in S.table(tab).get("check", {}).items()}
+                if comparable and col in S.nn(tab) and col in checks:
+                    lo, hi = (_bound(x, r.type) for x in checks[col])
+                    cv = _bound(c, r.type)
+                    v = _decide(o, lo, hi, cv) if cv is not None else None
+                    if v is not None:
+                        new_ins = Instr("FILL", ins.dests, ["TRUE" if v else "FALSE", a])
+        elif op == "IDX" and fill_of(srcs[0]) == "TRUE":
+            new_ins = Instr("IOTA", ins.dests, [srcs[0]])
+        elif op == "NOT" and fill_of(srcs[0]) is not None:
+            new_ins = Instr("FILL", ins.dests, ["FALSE" if fill_of(srcs[0]) == "TRUE" else "TRUE", srcs[0]])
+        elif op in ("AND", "OR") and len(srcs) == 2 and all(kind(t) == "reg" for t in srcs):
+            for x, t in ((srcs[0], srcs[1]), (srcs[1], srcs[0])):
+                fv = fill_of(t)
+                if fv is None or not is_bool(x):
+                    continue
+                if (op, fv) in (("AND", "TRUE"), ("OR", "FALSE")):
+                    sub[ins.dests[0]] = x
+                    new_ins = "drop"
+                else:
+                    new_ins = Instr("FILL", ins.dests, [fv, x])
+                break
+        if new_ins is None:
+            out.append(ins)
+            continue
+        changed = True
+        if new_ins != "drop":
+            out.append(new_ins)
+            defs[ins.dests[0]] = new_ins
+    return out, changed
+
+
 # cheap clean-up first, so the analysis-based rules see a smaller program
-PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown]
+PASSES = [cse, dce, gather_chain, filter_first, sorted_sort, pointless, filter_pushdown, range_fold]
 # second phase: lookup joins rewrite the gathers that filter pushdown matches on,
 # so they run only once the first phase has settled
 LATE_PASSES = PASSES + [lookup_join]
