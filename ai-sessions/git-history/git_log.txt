@@ -1,3 +1,35 @@
+commit 8eebedaa2760913b1a81e012904ff3a4c327dbd3
+Author:     skodi1511 <sameera.kodi@wework.com>
+AuthorDate: Wed Nov 11 07:46:45 2026 -0500
+Commit:     skodi1511 <sameera.kodi@wework.com>
+CommitDate: Wed Nov 11 07:46:45 2026 -0500
+
+    Dump sessions c9f778f7 and d65688c6: prompts, raw files, git history, models, tokens, spend
+    
+    ai-sessions/SESSION_USAGE.md has per-session usage by THREAD_ID (10.65 and 12.99
+    credits, claude-opus-5-5). AI_USAGE.md, 5.SUBMISSION.md and TEST_SESSION.html move
+    to the new project total (~68.7 credits).
+    
+    Generated with [Snowflake CoCo](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+    
+    Co-authored-by: Snowflake CoCo <noreply@snowflake.com>
+
+ .apd/hooks.log                                     |  4 ++
+ AI_USAGE.md                                        | 18 ++++----
+ ai-sessions/SESSION_USAGE.md                       | 53 ++++++++++++++++++++++
+ ai-sessions/TEST_SESSION.html                      | 13 +++---
+ ai-sessions/git-history/git_log.txt                | 38 ++++++++++++++++
+ ai-sessions/git-history/git_reflog.txt             |  2 +
+ ai-sessions/prompts/INDEX.md                       |  4 +-
+ ai-sessions/prompts/c9f778f7_user_prompts.md       | 10 +++-
+ ai-sessions/prompts/d65688c6_user_prompts.md       |  6 ++-
+ ...778f7-7883-4ba4-8fe8-befd93970962.history.jsonl | 41 +++++++++++++++++
+ .../raw/c9f778f7-7883-4ba4-8fe8-befd93970962.json  | 32 ++++++-------
+ ...688c6-2dd5-4500-a93d-ca38d871240b.history.jsonl |  7 +++
+ .../raw/d65688c6-2dd5-4500-a93d-ca38d871240b.json  | 42 ++++++++---------
+ minivm-takehome/docs/5.SUBMISSION.md               | 14 +++---
+ 14 files changed, 220 insertions(+), 64 deletions(-)
+
 commit 2bb596571c2ebe4e5d0b326719c4f217f25de595
 Author:     skodi1511 <sameera.kodi@wework.com>
 AuthorDate: Wed Nov 11 07:40:05 2026 -0500
