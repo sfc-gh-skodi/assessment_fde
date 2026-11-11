@@ -8,7 +8,7 @@
   <script type="application/json" id="snowflake-report-metadata">
   {
     "generated": "2026-11-11",
-    "intent": "Record of the MiniVM BUILD session (session fbd23c3f-608b-4330-a7ac-860d8f7fb94a and its 3 subagents): what was built, how, the numbers, decisions, and AI usage.",
+    "intent": "Record of the MiniVM BUILD sessions: session 1 (fbd23c3f-608b-4330-a7ac-860d8f7fb94a and its 3 subagents) built the evaluator, test suite and optimizer skeleton; session 2 (d65688c6-2dd5-4500-a93d-ca38d871240b) added optimizer rules 1-4. What was built, how, the numbers, decisions, and AI usage.",
     "dataSources": [
       { "type": "file", "path": "progress.md" },
       { "type": "file", "path": "runs/evaluator_iterations.md" },
@@ -27,6 +27,12 @@
       { "id": "ai-usage", "title": "AI models and usage",
         "dataSources": [{ "type": "query", "sql": "SELECT f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits, MIN(h.USAGE_TIME) AS first_use, MAX(h.USAGE_TIME) AS last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'desktop' AND h.USAGE_TIME >= '2026-11-10 22:32:00 +0000' GROUP BY f.key ORDER BY credits DESC" }],
         "producerNotes": "Queried 2026-11-11 ~01:45 UTC. Window starts at this session's creation (22:32 UTC); includes its 3 subagents. The only other Desktop session in the window (d65688c6) lasted 1 minute with no history. ACCOUNT_USAGE lags, so the last minutes may be missing." },
+      { "id": "session-2", "title": "Session 2: the four optimizer rules",
+        "dataSources": [{ "type": "file", "path": "progress.md" }, { "type": "file", "path": "runs/loop.jsonl" }, { "type": "file", "path": "runs/bench_last.json" },
+                        { "type": "file", "path": "git log d1cbf29..82fa409" }, { "type": "file", "path": "minivm-onepager.pdf" },
+                        { "type": "file", "path": "ai-sessions/raw/d65688c6-2dd5-4500-a93d-ca38d871240b.json" },
+                        { "type": "query", "sql": "SELECT h.THREAD_ID, f.key AS model, COUNT(DISTINCT h.REQUEST_ID) AS requests, SUM(COALESCE(t.value:input::NUMBER,0)) AS input_tok, SUM(COALESCE(t.value:cache_read_input::NUMBER,0)) AS cache_read_tok, SUM(COALESCE(t.value:cache_write_input::NUMBER,0)) AS cache_write_tok, SUM(COALESCE(t.value:output::NUMBER,0)) AS output_tok, ROUND(SUM(COALESCE(f.value:input::FLOAT,0)+COALESCE(f.value:output::FLOAT,0)+COALESCE(f.value:cache_read_input::FLOAT,0)+COALESCE(f.value:cache_write_input::FLOAT,0)),4) AS credits, MIN(h.USAGE_TIME) AS first_use, MAX(h.USAGE_TIME) AS last_use FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY h, LATERAL FLATTEN(input => h.CREDITS_GRANULAR) f, LATERAL FLATTEN(input => h.TOKENS_GRANULAR) t WHERE t.key = f.key AND h.USER_NAME = 'SKODI' AND LOWER(h.INTERFACE) = 'desktop' AND h.USAGE_TIME >= '2026-11-11 01:38:00 +0000' GROUP BY 1, 2 ORDER BY credits DESC" }],
+        "producerNotes": "Tier numbers from tools/loop.py --gate 1,2,3 at commit 82fa409 (runs/loop.jsonl, 01:57 UTC). Example cycles from bin/minivm on examples/data.json. Optimizer wall times measured with subprocess timing over 66 programs incl. tests/stress. AI usage queried ~02:26 UTC: this session is THREAD_ID 82264130449 (first use 01:38:50); thread 82264130433 (01:38-01:52) is session 1's tail and is excluded; ACCOUNT_USAGE lags, so the last minutes are missing." },
       { "id": "next", "title": "Where we stopped and what's next", "dataSources": [{ "type": "file", "path": "progress.md" }] }
     ]
   }
@@ -187,12 +193,110 @@ The checker is a script, not an LLM.</p>
 <p class="sub">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, Desktop interface, user SKODI, from 2026-11-10 22:32 UTC
 (this session + its 3 subagents). Cache reads dominate because each turn re-reads the growing conversation.</p>
 
+<h2 id="session-2">Session 2: the four optimizer rules</h2>
+<p class="sub">Session <code>d65688c6-2dd5-4500-a93d-ca38d871240b</code> · Cortex Code Desktop · claude-opus-5-5 ·
+2026-11-11 01:38 → ~02:30 UTC · no subagents · 4 commits (<code>55b8b1c</code>, <code>8b66d0b</code>, <code>745fbb0</code>, <code>82fa409</code>) · ≈ 2.4 credits</p>
+
+<p>Goal: add exactly the four rules from session 1's hand-off prompt to <code>optimizer/passes.py</code>, one at a time. Each rule went through
+the same loop: write it → <code>tools/loop.py</code> (~10 s) → fix if any defect → <code>--gate 1 --log N</code> → commit that rule alone.
+Then stop.</p>
+
+<div class="cards">
+  <div class="card"><div class="v ok">0</div><div class="l">defects in 11,611 checks (full evaluate, seeds 1, 2, 3)</div></div>
+  <div class="card"><div class="v">1.30×</div><div class="l">suite speedup, up from 1.08× (examples 1.38×)</div></div>
+  <div class="card"><div class="v">1.75–2.18×</div><div class="l">on generated programs (seeds 1 / 2 / 3), up from ~1.4×</div></div>
+  <div class="card"><div class="v">0.61 s</div><div class="l">slowest <code>./optimize</code>, 20k-instruction stress program (limit 1 s)</div></div>
+</div>
+
+<h3>Step by step</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>UTC</th><th>Rule (ELI5)</th><th>How it stays correct</th><th>Result</th><th>Commit</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>01:39</td><td>Baseline: read the optimizer, docs and loop runner; ran the loop.</td><td>—</td><td>0 defects; suite 1.08×</td><td>—</td></tr>
+<tr><td>1</td><td>01:45</td><td><b>Don't carry every column through every step.</b> A pick from a pick becomes one pick from the original list, using one combined pick-list.</td>
+<td><code>s[i[j[k]]]</code> either way; the new form reads fewer index entries, so it can only drop errors. Fires only when the inner GATHER then dies.</td>
+<td>1.11× (first try was 1.09× and examples got worse, because it fired when the inner GATHER was still needed)</td><td><code>55b8b1c</code></td></tr>
+<tr><td>2</td><td>01:48</td><td><b>Filter first, then do the work.</b> A per-row calculation (or FILL label) that is only read through a filter is computed on the kept rows.</td>
+<td>Element-wise: row <i>k</i> only depends on row <i>k</i>. Runs on a subset of rows, so it can't add a crash. Only through indexes that pick each row at most once (IDX, IOTA, SORT, TOPK, GFIRST), never joins; only when the price list says cheaper.</td>
+<td>1.16× (one crash on the first try, caught because every program silently fell back to the original; fixed the check order)</td><td><code>8b66d0b</code></td></tr>
+<tr><td>3</td><td>01:50</td><td><b>Don't sort what's already sorted.</b> If the table promises rows are stored in that order and nothing shuffled them, the SORT becomes 0, 1, 2, … and the gathers through it vanish.</td>
+<td>Uses the schema's <code>sorted</code> constraint (true for every table set), never stats. Keys must all be <code>ASC NF</code> and a prefix of the sorted columns; rows must still be in stored order (load, filter, join left side).</td>
+<td>1.21×</td><td><code>745fbb0</code></td></tr>
+<tr><td>4</td><td>01:53</td><td><b>Don't do pointless work.</b> (a) A SORT whose order only reaches whole-table totals is dropped. (b) NLJOIN becomes HJOIN when the price list says cheaper.</td>
+<td>(a) GSUM / GCOUNT / GCOUNTV over GALL only see the multiset of rows; any other use, mixing with unsorted rows, or GMIN/GMAX (first of equals) refuses. (b) HJOIN gives the same result and errors as NLJOIN.</td>
+<td>1.30×; easy tier 35.9 M → 0.9 M cycles</td><td><code>82fa409</code></td></tr>
+<tr><td>5</td><td>01:57</td><td>Final gate on 3 seeds.</td><td>—</td><td>0 defects in 11,611 checks</td><td>—</td></tr>
+<tr><td>6</td><td>02:05–02:25</td><td>Ran the <code>docs/running.md</code> steps by hand on all 8 examples and checked the one-pager's criteria.</td><td>—</td><td>8/8 same rows as <code>examples/expected</code>; all criteria met</td><td>—</td></tr>
+</tbody></table></div>
+
+<h3>Speedup per tier, before and after</h3>
+<div class="chart-box"><canvas id="tiers2"></canvas></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Tier</th><th>Programs</th><th>Before (<code>d1cbf29</code>)</th><th>After (<code>82fa409</code>)</th><th>Faster at all</th><th>≥ 1.2×</th><th>Defects</th></tr></thead>
+<tbody>
+<tr><td>examples</td><td class="n">8</td><td class="n">1.17×</td><td class="n">1.38×</td><td class="n">8 / 8</td><td class="n">5 / 8</td><td class="n ok">0</td></tr>
+<tr><td>easy</td><td class="n">16</td><td class="n">1.17×</td><td class="n">1.64×</td><td class="n">10 / 16</td><td class="n">9 / 16</td><td class="n ok">0</td></tr>
+<tr><td>medium</td><td class="n">15</td><td class="n">1.01×</td><td class="n">1.11×</td><td class="n">15 / 15</td><td class="n">2 / 15</td><td class="n ok">0</td></tr>
+<tr><td>complex</td><td class="n">12</td><td class="n">1.03×</td><td class="n">1.22×</td><td class="n">11 / 12</td><td class="n">3 / 12</td><td class="n ok">0</td></tr>
+<tr><td>HR schema</td><td class="n">11</td><td class="n">1.03×</td><td class="n">1.17×</td><td class="n">7 / 11</td><td class="n">3 / 11</td><td class="n ok">0</td></tr>
+<tr><th>all</th><th class="n">62</th><th class="n">1.08×</th><th class="n">1.30×</th><th colspan="2"></th><th class="n ok">0</th></tr>
+</tbody></table></div>
+<p class="sub">Counts are geomeans over each program's test datasets (<code>runs/bench_last.json</code>). Generated programs (<code>./evaluate</code>): 1.75× / 1.95× / 2.18× on seeds 1 / 2 / 3.</p>
+
+<h3>Examples run by hand (<code>bin/minivm</code> on <code>examples/data.json</code>)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Program</th><th>Rows vs original and <code>expected/</code></th><th>Cycles before → after</th><th>Speedup</th></tr></thead>
+<tbody>
+<tr><td>q0001</td><td class="ok">same</td><td class="n">13,766 → 10,923</td><td class="n">1.26×</td></tr>
+<tr><td>q0002</td><td class="ok">same</td><td class="n">3,617 → 3,613</td><td class="n">1.00×</td></tr>
+<tr><td>q0003</td><td class="ok">same</td><td class="n">8,562 → 7,842</td><td class="n">1.09×</td></tr>
+<tr><td>q0004</td><td class="ok">same</td><td class="n">18,442 → 12,068</td><td class="n">1.53×</td></tr>
+<tr><td>q0005</td><td class="ok">same</td><td class="n">5,518 → 3,919</td><td class="n">1.41×</td></tr>
+<tr><td>q0006</td><td class="ok">same</td><td class="n">6,338 → 6,452</td><td class="n warn">0.98×</td></tr>
+<tr><td>q0007</td><td class="ok">same</td><td class="n">2,596 → 960</td><td class="n">2.70×</td></tr>
+<tr><td>q0008</td><td class="ok">same</td><td class="n">1,524 → 1,249</td><td class="n">1.22×</td></tr>
+</tbody></table></div>
+<p class="sub">q0006 is correct but about 2% slower on this one dataset: the cost estimate predicted a saving that didn't happen. Not investigated (out of scope for the four rules).</p>
+
+<h3>Requirements check (<code>minivm-onepager.pdf</code>)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Requirement</th><th>Status</th><th>Evidence</th></tr></thead>
+<tbody>
+<tr><td>Same results on any data with the schema's tables and constraints</td><td class="ok">met (tested)</td><td>0 defects in 11,611 checks on random legal data and programs; rules only delete work or run it on fewer rows; stats feed cost only</td></tr>
+<tr><td>Order kept when the program specifies it</td><td class="ok">met</td><td>Evaluator compares order for ordered outputs; no rule reorders output rows</td></tr>
+<tr><td>Numbers within 1e-6 relative</td><td class="ok">met</td><td>No arithmetic is changed; GSUM is exact and order-free</td></tr>
+<tr><td>At most 1 second per program</td><td class="warn">met, with a margin to watch</td><td>66 programs timed end to end: 0 over 1 s. Slowest: <code>tests/stress/example/prog_20k.mini</code> 0.61 s, next 0.16 s, normal programs &lt; 0.08 s. Internal 0.7 s deadline falls back to the original, but it doesn't cover Python start-up, so a much slower machine could get close.</td></tr>
+<tr><td><code>./evaluate</code>: at most 2 minutes; exit 0 only with no defects</td><td class="ok">met</td><td>36–41 s per full seed, ~10 s quick; exited 0 on every clean run</td></tr>
+</tbody></table></div>
+
+<h3>What we learned</h3>
+<ol>
+<li><b>A correct rewrite can still lose.</b> Gather composition first made the examples slower, because it also fired when the inner GATHER was still needed. Firing only when the old work dies fixed it.</li>
+<li><b>The fallback guard hides crashes again.</b> Rule 2's first version threw an IndexError on every program. The loop still said 0 defects; only the speedup dropping to 1.00× gave it away. Watch the speedup, not just the defect count.</li>
+<li><b>"At most once" is about cost, not correctness.</b> Element-wise work is correct after any index, but through a join that repeats rows it would be done more times, not fewer.</li>
+<li><b>Order-free totals need consistent shuffles.</b> Dropping a SORT before GSUM is safe only if every column it touches is shuffled the same way; mixing with an unsorted column, or GMIN/GMAX (first of equals), would change answers.</li>
+<li><b>Schema constraints, not stats.</b> Rule 3 relies only on the <code>sorted</code> constraint, which every table set must obey; stats only choose between correct options (rule 2 cost check, NLJOIN→HJOIN).</li>
+</ol>
+
+<h3>AI usage (this session)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Model</th><th>Requests</th><th>Input</th><th>Cache read</th><th>Cache write</th><th>Output</th><th>Credits</th></tr></thead>
+<tbody>
+<tr><td>claude-opus-5-5</td><td class="n">46</td><td class="n">104</td><td class="n">7,571,714</td><td class="n">421,834</td><td class="n">38,785</td><td class="n">2.420</td></tr>
+<tr><td>gemini-3.7-flash</td><td class="n">1</td><td class="n">362</td><td class="n">0</td><td class="n">0</td><td class="n">310</td><td class="n">0.001</td></tr>
+<tr><th>Total</th><th class="n">47</th><th colspan="4" class="n">≈ 8.0 M tokens in (95% cache reads), 0.04 M out</th><th class="n">≈ 2.4</th></tr>
+</tbody></table></div>
+<p class="sub">Source: <code>SNOWFLAKE.ACCOUNT_USAGE.SNOWFLAKE_COCO_USAGE_HISTORY</code>, Desktop, user SKODI, THREAD_ID <code>82264130449</code>, from 01:38 UTC.
+Queried ~02:26 UTC; ACCOUNT_USAGE lags, so requests after ~02:11 are not yet included. The overlapping thread <code>82264130433</code> (01:38–01:52) is session 1's tail and is excluded.
+Combined with session 1: ≈ 21.6 credits.</p>
+
 <h2 id="next">Where we stopped and what's next</h2>
 <ul>
-<li><b>State:</b> commit <code>d1cbf29</code>. 0 defects, suite 1.08×, examples 1.17× (hand-optimized reference 3.06×).</li>
-<li><b>Next (≈ 1 h, low risk):</b> items 1–4 of the plan. Gather composition, compute after filter, identity SORT on <code>sorted</code> tables, dead SORT + NLJOIN→HJOIN. Projected: about half the suite ≥ 1.2× faster, examples ~1.6–2×.</li>
+<li><b>State:</b> commit <code>82fa409</code>. 0 defects, suite 1.30×, examples 1.38× (hand-optimized reference 3.06×), generated 1.75–2.18×.</li>
+<li><b>Done in session 2:</b> items 1–4 of the plan (gather composition, compute after filter, identity SORT on <code>sorted</code> tables, dead SORT + NLJOIN→HJOIN).</li>
+<li><b>Small follow-ups:</b> lower the 0.7 s deadline (or skip the analysis-heavy rules on very large programs) to widen the 1-second margin; check why the cost model mis-predicted q0006; let <code>tools/bench.py</code> pick up a <code>tests/regressions/</code> folder.</li>
 <li><b>Later:</b> TOPK (30 min), filter pushdown + lookup joins (1.5 h), self-join idioms (2–3 h, gated; revert on any defect).</li>
-<li><b>Record:</b> raw sessions in <code>ai-sessions/raw/</code> (this session and its subagents: <code>fbd23c3f</code>, <code>8bd6e105</code>, <code>c6f9a650</code>, <code>ff2fe706</code>), prompts in <code>prompts/</code>, iteration logs in <code>progress.md</code> and <code>runs/</code>.</li>
+<li><b>Record:</b> raw sessions in <code>ai-sessions/raw/</code> (session 1 and its subagents: <code>fbd23c3f</code>, <code>8bd6e105</code>, <code>c6f9a650</code>, <code>ff2fe706</code>; session 2: <code>d65688c6</code>), prompts in <code>prompts/</code>, iteration logs in <code>progress.md</code> (rows 4–7) and <code>runs/</code>.</li>
 </ul>
 
 <script src="/libs/mermaid@10.9.6/mermaid.min.js"></script>
@@ -211,6 +315,20 @@ The checker is a script, not an LLM.</p>
       datasets: [
         { label: 'Optimizer today (geomean ×)', data: [1.17, 1.17, 1.01, 1.03, 1.03], backgroundColor: '#29B5E8' },
         { label: 'Hand-optimized reference (×)', data: [3.06, null, null, null, null], backgroundColor: '#94a3b8' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: fg } } },
+      scales: { x: { ticks: { color: fg }, grid: { color: grid } },
+                y: { beginAtZero: true, ticks: { color: fg }, grid: { color: grid }, title: { display: true, text: 'speedup (×)', color: fg } } } }
+  });
+  new Chart(document.getElementById('tiers2'), {
+    type: 'bar',
+    data: {
+      labels: ['examples', 'easy', 'medium', 'complex', 'HR schema', 'all'],
+      datasets: [
+        { label: 'Before rules 1–4 (geomean ×)', data: [1.17, 1.17, 1.01, 1.03, 1.03, 1.08], backgroundColor: '#94a3b8' },
+        { label: 'After rules 1–4 (geomean ×)', data: [1.38, 1.64, 1.11, 1.22, 1.17, 1.30], backgroundColor: '#29B5E8' }
       ]
     },
     options: { responsive: true, maintainAspectRatio: false,

@@ -1,3 +1,7 @@
+82fa409 HEAD@{2026-11-10 20:53:39 -0500}: commit: Rule 4: drop SORTs that only feed GALL totals; NLJOIN -> HJOIN when cheaper
+745fbb0 HEAD@{2026-11-10 20:50:52 -0500}: commit: Rule 3: drop SORTs over rows already in the table's stored (sorted) order
+8b66d0b HEAD@{2026-11-10 20:48:56 -0500}: commit: Rule 2: push element-wise work and FILL below row-picking GATHERs (filter first)
+dfaa0bf HEAD@{2026-11-10 20:47:44 -0500}: commit: Add BUILD_SESSION.html and the build session's raw records (main + 3 subagents), prompts, refreshed git history
 55b8b1c HEAD@{2026-11-10 20:45:58 -0500}: commit: Rule 1: compose chained GATHERs so columns aren't carried through every step
 d1cbf29 HEAD@{2026-11-10 20:25:43 -0500}: commit: Rank 1: CSE recognises commutative/flipped operands, case-insensitive LOADs, AND/OR x,x; add e16 test
 8f06f8c HEAD@{2026-11-10 20:18:58 -0500}: commit: Wire minivm-takehome/optimize and evaluate to the real optimizer/evaluator; identity baseline moves to tools/identity_opt.sh
