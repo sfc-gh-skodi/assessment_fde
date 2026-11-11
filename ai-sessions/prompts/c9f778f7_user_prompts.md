@@ -2,7 +2,7 @@
 
 Session `c9f778f7-7883-4ba4-8fe8-befd93970962` · Golden Set Optimizer Report
 
-prompts: 23
+prompts: 25
 
 ## 1. 2026-11-11 02:54:37 UTC
 
@@ -150,3 +150,11 @@ Also update the future plan document such that it is structure in a top down fas
 ## 23. 2026-11-11 12:42:33 UTC
 
 Okay ensure you dump all the prompts, raw session files,gti history, models used, rough usage, tokens and spend into the ai-sessions folder for this session and the MiniVM Program Optimizer session
+
+## 24. 2026-11-11 12:52:00 UTC
+
+Any other uncommited changes left to push?
+
+## 25. 2026-11-11 13:10:01 UTC
+
+I made some final cleanups inside ai-sessions and moved ai_usage inside ai-session. Wrap up , commit and push
