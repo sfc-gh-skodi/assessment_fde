@@ -255,7 +255,61 @@ def _already_sorted(keys, info):
     return bool(cols) and tuple(cols) == tuple(valid[:len(cols)])
 
 
-PASSES = [gather_chain, filter_first, sorted_sort, cse, dce]
+def _only_feeds_totals(prog, start, p, defs):
+    """True if the positions p (a permutation) reach nothing but GALL totals.
+
+    'Permuted' values are p itself, GATHER(x, permuted) of an unpermuted x, and
+    element-wise ops / FILL whose register operands are all permuted: each is its
+    0..n-1 version with rows reordered the same way. A GALL over them, and GSUM /
+    GCOUNTV over a GALL, only see the multiset of rows (GSUM is exact and rounded
+    once, so order-free), so they get the same totals, and the same rows can
+    error, if p is replaced by 0..n-1. Any other use (OUT, IDX, SLICE, SORT, joins,
+    GROUP, GMIN/GMAX's first-of-equals, mixing with unpermuted rows) refuses."""
+    perm = {p}
+    for ins in prog[start + 1:]:
+        regs = [key_reg(t) for t in ins.srcs if kind(t) in ("reg", "key")]
+        hit = [r in perm for r in regs]
+        if not any(hit):
+            continue
+        op = ins.op
+        if op == "GATHER" and not hit[0] and hit[1]:
+            perm.add(ins.dests[0])
+        elif (op in ELEMENTWISE or op == "FILL") and all(hit):
+            perm.add(ins.dests[0])
+        elif op == "GALL":
+            pass
+        elif op in ("GSUM", "GCOUNTV") and not hit[0] and defs[regs[0]].op == "GALL":
+            pass
+        else:
+            return False
+    return True
+
+
+def pointless(prog, schema=None):
+    """Rule 4.
+    a) SORT whose positions only feed GALL totals -> IOTA (see _only_feeds_totals);
+       rule 3's GATHER(s, IOTA) then turns the gathers into the plain columns.
+    b) NLJOIN -> HJOIN when the price list says HJOIN is cheaper. HJOIN gives the
+       same result as NLJOIN, errors included (docs/instructions/joins.md); stats
+       only feed the price estimate."""
+    if schema is None:
+        return prog, False
+    defs, info, out, changed = _defs(prog), None, [], False
+    for n, ins in enumerate(prog):
+        if ins.op == "SORT" and _only_feeds_totals(prog, n, ins.dests[0], defs):
+            ins = Instr("IOTA", ins.dests, [key_reg(ins.srcs[0])])
+            changed = True
+        elif ins.op == "NLJOIN":
+            info = info or analyze(prog, schema)
+            h = Instr("HJOIN", ins.dests, ins.srcs)
+            if instr_cost(h, info) < instr_cost(ins, info):
+                ins = h
+                changed = True
+        out.append(ins)
+    return out, changed
+
+
+PASSES = [gather_chain, filter_first, sorted_sort, pointless, cse, dce]
 
 
 def run(prog, schema=None, deadline=None):
